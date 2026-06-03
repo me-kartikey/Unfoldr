@@ -1,0 +1,71 @@
+Project Plan for AI Developer Onboarding & Repository Intelligence Platform
+
+Phase 0 — Foundation
+1. Replace scaffold placeholders with real project setup
+   - Create a proper `docker-compose.yml` file
+   - Initialize backend FastAPI application structure
+   - Initialize frontend React application structure
+   - Add basic `README.md`, backend and frontend dependency manifests, and start scripts
+
+Phase 1 — Repository Management
+1. Implement backend repository upload flow
+   - Upload ZIP repository endpoint
+   - Safe extraction, file validation, secure storage path
+   - Repository metadata persistence in PostgreSQL
+   - Status tracking: `uploaded`, `indexing`, `completed`, `failed`
+2. Build repository list/detail APIs
+3. Add basic frontend pages for upload, repository list, and details
+
+Phase 2 — Repository Scanner
+1. Implement scanning service
+   - Detect languages by file extension
+   - Detect frameworks by specific files and manifest contents
+   - Extract dependencies from `requirements.txt`, `package.json`, etc.
+   - Generate repository folder tree structure
+2. Store scanner metadata in PostgreSQL
+3. Expose scan results via API and UI
+
+Phase 3 — Code Understanding + API Discovery
+1. Build code metadata extractor
+   - Extract classes, functions, services, controllers, modules
+2. Implement API discovery for FastAPI first
+   - Discover method, route, description, source file
+3. Store and expose extracted API metadata
+
+Phase 4 — Database Schema Analyzer
+1. Parse SQL files, migrations, ORM models
+   - Extract tables, columns, relationships, foreign keys
+2. Store database schema metadata
+3. Generate database documentation markdown
+
+Phase 5 — Documentation & Visualization
+1. Generate documentation content
+   - Project overview and business domain
+   - Installation guide
+   - API documentation
+   - Database documentation
+   - Module documentation
+2. Implement architecture visualization
+   - Dependency graph and service flow diagram
+   - Use React Flow for frontend visualization
+
+Phase 6 — Vector Search + AI Assistant
+1. Chunk repository content and generate embeddings
+2. Integrate ChromaDB vector store
+3. Build Q&A pipeline
+   - Query embedding
+   - Vector search retrieval
+   - Gemini answer generation
+
+Phase 7 — Advanced Features
+1. Security hardening
+   - ZIP bomb protection
+   - Validation and secure storage
+   - API rate limiting
+2. Incremental indexing
+3. GitHub repository integration
+4. Team collaboration and analytics
+
+Immediate next step
+- Scaffold backend and frontend foundations
+- Implement Phase 1 repository upload and metadata persistence first

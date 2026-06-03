@@ -1,0 +1,542 @@
+# AI Developer Onboarding & Repository Intelligence Platform
+
+## Project Overview
+
+### Project Name
+
+AI Developer Onboarding & Repository Intelligence Platform
+
+### Vision
+
+Build a production-grade platform that helps developers understand large codebases quickly by automatically analyzing repositories and generating structured insights, documentation, architecture diagrams, API catalogs, database understanding, onboarding roadmaps, and AI-powered codebase Q&A.
+
+### Problem Statement
+
+When a new developer joins a team, understanding an unfamiliar codebase can take days or weeks. Existing AI coding assistants primarily focus on code generation and code completion, but they do not provide a structured onboarding experience or repository intelligence.
+
+The goal of this platform is to reduce onboarding time significantly by transforming a repository into a searchable and explainable knowledge base.
+
+---
+
+# Primary Objective
+
+Help developers understand a repository 10x faster through automated repository analysis and AI-powered insights.
+
+The system should answer questions such as:
+
+* What does this project do?
+* How is the architecture organized?
+* Which APIs exist?
+* What database tables are used?
+* How do modules communicate?
+* What should a new developer learn first?
+* Which components are most critical?
+
+---
+
+# Target Users
+
+### New Developers
+
+Need to understand an unfamiliar codebase quickly.
+
+### Engineering Teams
+
+Need up-to-date documentation and architecture understanding.
+
+### Team Leads
+
+Need onboarding resources for new hires.
+
+### Engineering Managers
+
+Need visibility into repository structure and critical modules.
+
+---
+
+# Technology Stack
+
+## Backend
+
+* FastAPI
+* SQLAlchemy
+* PostgreSQL
+* Alembic
+
+## Frontend
+
+* React
+* React Router
+* Axios
+* React Flow (for architecture diagrams)
+
+## AI Layer
+
+* Gemini API
+* Embeddings
+
+## Vector Database
+
+* ChromaDB
+
+## Infrastructure
+
+* Docker
+* Docker Compose
+
+---
+
+# System Architecture
+
+Repository
+↓
+Repository Analysis Engine
+↓
+Metadata Extraction
+↓
+Knowledge Base Generation
+↓
+PostgreSQL + ChromaDB
+↓
+AI Assistant Layer
+↓
+Developer Dashboard
+
+Core Components:
+
+1. Repository Management
+2. Repository Scanner
+3. Code Understanding Engine
+4. Documentation Generator
+5. API Discovery Engine
+6. Database Schema Analyzer
+7. Architecture Visualization Engine
+8. Onboarding Roadmap Generator
+9. AI Q&A Assistant
+
+---
+
+# Functional Requirements
+
+## Module 1: Repository Management
+
+Features:
+
+* Upload ZIP repository
+* Connect GitHub repository (future)
+* Store repository metadata
+* View repository list
+* View repository details
+* Delete repository
+
+Database Fields:
+
+* id
+* name
+* original_filename
+* storage_path
+* status
+* created_at
+
+Repository Status:
+
+* uploaded
+* indexing
+* completed
+* failed
+
+---
+
+## Module 2: Repository Scanner
+
+Purpose:
+Analyze repository structure and identify technologies.
+
+Extract:
+
+* Programming languages
+* Frameworks
+* Dependencies
+* Folder structure
+* Configuration files
+
+Examples:
+
+* Python
+* JavaScript
+* TypeScript
+* Java
+* PHP
+
+Framework Detection:
+
+* React
+* Next.js
+* FastAPI
+* Spring Boot
+* Laravel
+* Django
+
+Dependency Sources:
+
+* package.json
+* requirements.txt
+* pom.xml
+* composer.json
+
+---
+
+## Module 3: File Explorer
+
+Features:
+
+* Display repository tree structure
+* Navigate folders
+* View file metadata
+
+Example:
+
+src/
+controllers/
+services/
+models/
+database/
+
+---
+
+## Module 4: Code Understanding Engine
+
+Extract:
+
+* Classes
+* Functions
+* Services
+* Controllers
+* Modules
+
+Examples:
+
+Class:
+UserService
+
+Function:
+login()
+
+Controller:
+AuthController
+
+Store extracted metadata in PostgreSQL for future retrieval.
+
+---
+
+## Module 5: API Discovery Engine
+
+Automatically detect APIs.
+
+Examples:
+
+GET /users
+
+POST /login
+
+PUT /profile
+
+Store:
+
+* Method
+* Route
+* Description
+* Source File
+
+Supported Frameworks:
+
+* FastAPI
+* Express
+* Spring Boot
+* Laravel
+* Django
+
+---
+
+## Module 6: Database Schema Analyzer
+
+Analyze:
+
+* SQL files
+* Migration files
+* ORM models
+
+Extract:
+
+* Tables
+* Columns
+* Relationships
+* Foreign Keys
+
+Examples:
+
+Users
+Roles
+Permissions
+
+Relationship:
+
+User → Role
+
+Role → Permission
+
+---
+
+## Module 7: Documentation Generator
+
+Generate:
+
+### Project Overview
+
+Explain project purpose and business domain.
+
+### Installation Guide
+
+Explain setup and execution process.
+
+### API Documentation
+
+Document discovered endpoints.
+
+### Database Documentation
+
+Explain tables and relationships.
+
+### Module Documentation
+
+Describe important modules and responsibilities.
+
+Generated output should be stored as Markdown.
+
+---
+
+## Module 8: Architecture Visualization
+
+Generate system architecture automatically.
+
+Example:
+
+Frontend
+↓
+API Layer
+↓
+Business Logic
+↓
+Database
+
+Features:
+
+* Dependency Graph
+* Module Relationships
+* Service Flow Diagram
+
+Frontend Visualization:
+
+* React Flow
+
+---
+
+## Module 9: Developer Onboarding Assistant
+
+Generate learning roadmaps.
+
+Example:
+
+Backend Developer
+
+Day 1:
+
+* Environment Setup
+* Run Project
+
+Day 2:
+
+* Authentication Module
+
+Day 3:
+
+* User Management
+
+Day 4:
+
+* Core Business Logic
+
+Day 5:
+
+* Database Layer
+
+Frontend Developer
+
+Day 1:
+
+* UI Structure
+
+Day 2:
+
+* State Management
+
+Day 3:
+
+* API Integration
+
+---
+
+## Module 10: AI Q&A Assistant
+
+Features:
+
+* Ask questions about repository
+* Retrieve relevant code context
+* Generate answers using Gemini
+
+Example Questions:
+
+* How does authentication work?
+* Where is payment logic implemented?
+* Which API creates users?
+* Explain database relationships.
+
+Workflow:
+
+Question
+↓
+Embedding
+↓
+Vector Search
+↓
+Relevant Context Retrieval
+↓
+Gemini
+↓
+Answer
+
+---
+
+# Non-Functional Requirements
+
+## Performance
+
+Repository analysis should complete within 2 minutes for medium-sized repositories.
+
+## Reliability
+
+Failures should not crash the application.
+
+## Security
+
+* File validation
+* ZIP bomb protection
+* Secure file storage
+* API rate limiting
+
+## Scalability
+
+Support:
+
+* Multiple repositories
+* Multiple users
+* Incremental indexing in future
+
+---
+
+# Development Roadmap
+
+## Phase 1: Repository Management (Current Phase)
+
+Deliverables:
+
+* Upload ZIP repository
+* Save metadata to PostgreSQL
+* Extract repository contents
+* Repository listing
+* Repository details page
+
+Tech:
+
+* FastAPI
+* PostgreSQL
+* React
+* Docker
+
+---
+
+## Phase 2: Repository Scanner
+
+Deliverables:
+
+* Language detection
+* Framework detection
+* Dependency extraction
+* Folder structure generation
+
+---
+
+## Phase 3: Architecture Engine
+
+Deliverables:
+
+* Module mapping
+* Dependency graph
+* Architecture visualization
+
+---
+
+## Phase 4: Documentation Generator
+
+Deliverables:
+
+* Project overview
+* Installation guide
+* API documentation
+* Database documentation
+
+---
+
+## Phase 5: Vector Search
+
+Deliverables:
+
+* Chunking
+* Embeddings
+* ChromaDB integration
+
+---
+
+## Phase 6: AI Assistant
+
+Deliverables:
+
+* Repository Q&A
+* Context retrieval
+* Gemini integration
+
+---
+
+## Phase 7: Advanced Features
+
+Deliverables:
+
+* GitHub integration
+* Incremental indexing
+* Team collaboration
+* Personalized onboarding
+* Repository intelligence analytics
+
+---
+
+# Success Criteria
+
+The project is successful if a developer can:
+
+1. Upload a repository.
+2. Understand project architecture automatically.
+3. Explore APIs and database structure.
+4. Generate documentation without manual effort.
+5. Ask repository-related questions.
+6. Receive a personalized onboarding roadmap.
+7. Understand an unfamiliar codebase significantly faster than traditional onboarding methods.
