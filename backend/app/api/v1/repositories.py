@@ -29,3 +29,9 @@ def create_repository(
     )
 
     return repository
+@router.get(
+    "",
+    response_model=list[RepositoryResponse])
+def get_repositories(
+    db: Session=Depends(get_db)):
+    return RepositoryService.get_repositories(db)

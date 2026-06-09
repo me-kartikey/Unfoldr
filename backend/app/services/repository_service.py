@@ -17,3 +17,7 @@ class RepositoryService:
             db=db,
             repository_data=repository_data
         )
+    @staticmethod
+    def get_repositories(db: Session):
+       
+        return RepositoryRepository.get_all(db) 

@@ -2,10 +2,11 @@ from sqlalchemy.orm import Session
 
 from app.models.repository import Repository
 from app.schemas.repository import RepositoryCreate
+from sqlalchemy import select
 
 
 class RepositoryRepository:
-
+#for posting data insde the database
     @staticmethod
     def create(
         db: Session,
@@ -25,3 +26,10 @@ class RepositoryRepository:
         db.refresh(repository)
 
         return repository
+    
+    # for getting all the data from the database
+    @staticmethod
+    def get_all(db: Session):
+        statement = select(Repository)
+        result=db.execute(statement)
+        return result.scalars().all()
