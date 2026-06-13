@@ -33,3 +33,18 @@ class RepositoryRepository:
         statement = select(Repository)
         result=db.execute(statement)
         return result.scalars().all()
+    
+    @staticmethod
+    def get_by_id(
+        db: Session,
+        repository_id: str
+    ):
+    
+        return (
+            db.query(Repository)
+            .filter(
+                Repository.id == repository_id
+            )
+         .first()
+    )
+    

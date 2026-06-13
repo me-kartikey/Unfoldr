@@ -1,0 +1,1 @@
+UPLOAD_DIRECTORY = "storage/repositories_collections"
