@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from sqlalchemy.orm import Session
+from app.services.storage_service import StorageService
 
 from app.db.session import get_db
 from app.schemas.repository import (
@@ -35,3 +36,30 @@ def create_repository(
 def get_repositories(
     db: Session=Depends(get_db)):
     return RepositoryService.get_repositories(db)
+
+@router.get(
+    "/{repository_id}",
+    response_model=RepositoryResponse)
+def get_repository(
+    repository_id: str,
+    db: Session=Depends(get_db)):
+    return RepositoryService.get_repository(db, repository_id)
+
+@router.post("/upload")
+def upload_repository(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)):
+    repository_id, repository_path = (
+    StorageService.create_repository_directory()
+)
+    zip_path = StorageService.save_zip(
+    repository_path=repository_path,
+    uploaded_file=file
+)
+
+    return {
+    "repository_id": repository_id,
+    "repository_path": str(repository_path),
+    "filename": file.filename
+}
+    
