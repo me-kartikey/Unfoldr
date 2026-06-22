@@ -56,10 +56,23 @@ def upload_repository(
     repository_path=repository_path,
     uploaded_file=file
 )
+    extract_path = StorageService.extract_zip(
+    zip_path=zip_path,
+    repository_path=repository_path
+)
+    repository=RepositoryService.create_uploaded_repository(
+        db=db,
+        repository_id=repository_id,
+        file_name=file.filename,
+        repository_path=str(repository_path)
+    )
 
     return {
-    "repository_id": repository_id,
-    "repository_path": str(repository_path),
-    "filename": file.filename
+    # "repository_id": repository_id,
+    # "repository_path": str(repository_path),
+    #  "zip_path": str(zip_path),
+    # "filename": file.filename,
+    # "extract_path": str(extract_path)
+    repository
 }
-    
+

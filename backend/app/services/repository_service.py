@@ -33,3 +33,17 @@ class RepositoryService:
             db=db,
             repository_id=repository_id
         )
+    @staticmethod
+    def create_uploaded_repository(
+        db: Session,
+        repository_id: str,
+        file_name: str,
+        repository_path: str
+    ):
+        repository_name= file_name.removesuffix(".zip")
+        repository_data=RepositoryCreate(
+            name=repository_name,
+            original_name=file_name,
+            storage_path=repository_path
+        )
+        return RepositoryRepository.create(db=db, repository_data=repository_data)
