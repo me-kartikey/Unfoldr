@@ -4,7 +4,7 @@ from app.analyzers.repository_analyzer import (
 )
 
 repository_path = Path(
-    "storage/repositories_collection/81f5dc0a-76ae-457d-a0a9-29b71a2513b7/extracted"
+    "storage/repositories_collection/040957f6-4c80-4882-9ee5-743b518dad8c/extracted"
 )
 
 total_files = RepositoryAnalyzer.count_files(
@@ -13,4 +13,18 @@ total_files = RepositoryAnalyzer.count_files(
 
 print(
     f"Total Files: {total_files}"
+)
+
+extensions = (
+    RepositoryAnalyzer.detect_extensions(
+        repository_path
+    )
+)
+print(
+    f"Extensions: {extensions}"
+)
+
+languages = RepositoryAnalyzer.detect_languages(repository_path)
+print(
+    f"Languages: {languages}"
 )

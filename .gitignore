@@ -29,5 +29,9 @@ uploads/
 
 # Alembic cache
 alembic/versions/__pycache__/
+
 #learning
 learning/
+
+#requirements
+requirement/

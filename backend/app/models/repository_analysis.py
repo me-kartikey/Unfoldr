@@ -1,15 +1,13 @@
 import uuid
 from datetime import UTC, datetime
-from sqlalchemy.orm import relationship
 
 from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
-
-class Repository(Base):
-    __tablename__ = "repositories"
+class RepositoryAnalysis(Base):
+    __tablename__ = "repository_analysis"
 
     id: Mapped[str] = mapped_column(
         String(36),
@@ -17,25 +15,33 @@ class Repository(Base):
         default=lambda: str(uuid.uuid4())
     )
 
-    name: Mapped[str] = mapped_column(
-        String(255),
+    repository_id: Mapped[str] = mapped_column(
+        String(36),
         nullable=False
     )
 
-    original_name: Mapped[str] = mapped_column(
-        String(255),
+    total_files: Mapped[int] = mapped_column(
         nullable=False
     )
 
-    storage_path: Mapped[str] = mapped_column(
-        String(500),
+    extensions: Mapped[str] = mapped_column(
+        String(1000),
         nullable=False
     )
 
-    status: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        default="pending"
+    languages: Mapped[str] = mapped_column(
+        String(1000),
+        nullable=False
+    )
+
+    frameworks: Mapped[str] = mapped_column(
+        String(1000),
+        nullable=False
+    )
+
+    libraries: Mapped[str] = mapped_column(
+        String(1000),
+        nullable=False
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -49,9 +55,5 @@ class Repository(Base):
         onupdate=lambda: datetime.now(UTC)
     )
 
-    #analysis relationship with RepositoryAnalysis
-    analysis = relationship(
-    "RepositoryAnalysis",
-    back_populates="repository",
-    uselist=False
-    )
+
+    
