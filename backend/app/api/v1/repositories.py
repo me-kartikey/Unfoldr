@@ -46,9 +46,10 @@ def get_repository(
     return RepositoryService.get_repository(db, repository_id)
 
 @router.post(
-        "/upload"
+        "/upload",
         response_model=RepositoryResponse
         )
+
 def upload_repository(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)):
