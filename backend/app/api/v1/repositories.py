@@ -45,7 +45,10 @@ def get_repository(
     db: Session=Depends(get_db)):
     return RepositoryService.get_repository(db, repository_id)
 
-@router.post("/upload")
+@router.post(
+        "/upload"
+        response_model=RepositoryResponse
+        )
 def upload_repository(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)):
@@ -60,19 +63,11 @@ def upload_repository(
     zip_path=zip_path,
     repository_path=repository_path
 )
-    repository=RepositoryService.create_uploaded_repository(
+    repository = RepositoryService.create_uploaded_repository(
         db=db,
-        repository_id=repository_id,
         file_name=file.filename,
-        repository_path=str(repository_path)
+        repository_path=repository_path
     )
 
-    return {
-    # "repository_id": repository_id,
-    # "repository_path": str(repository_path),
-    #  "zip_path": str(zip_path),
-    # "filename": file.filename,
-    # "extract_path": str(extract_path)
-    repository
-}
+    return repository
 
