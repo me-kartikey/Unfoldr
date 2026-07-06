@@ -1,9 +1,10 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, String
-from sqlalchemy.orm import Mapped, mapped_column
-
+from sqlalchemy import DateTime, String, ForeignKey
+from sqlalchemy.orm import(
+Mapped, mapped_column,relationship
+)
 from app.db.base import Base
 
 class RepositoryAnalysis(Base):
@@ -17,7 +18,9 @@ class RepositoryAnalysis(Base):
 
     repository_id: Mapped[str] = mapped_column(
         String(36),
-        nullable=False
+        ForeignKey("repositories.id"),
+        nullable=False,
+        unique=True
     )
 
     total_files: Mapped[int] = mapped_column(
@@ -54,6 +57,11 @@ class RepositoryAnalysis(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC)
     )
+    repository = relationship(
+        "Repository",
+        back_populates="analysis"
+    )
+    
 
 
     

@@ -55,3 +55,10 @@ class Repository(Base):
     back_populates="repository",
     uselist=False
     )
+
+    #dependencies relationship with RepositoryDependency
+    dependencies = relationship(
+    "RepositoryDependency",
+    back_populates="repository"
+    )
+    from app.models.repository_dependency import RepositoryDependency

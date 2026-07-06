@@ -1,3 +1,4 @@
+
 from sqlalchemy.orm import Session
 
 from app.models.repository_analysis import RepositoryAnalysis
@@ -10,9 +11,9 @@ class RepositoryAnalysisService:
     @staticmethod
     def create_analysis(
         db: Session,
-        repository_analysis_create: RepositoryAnalysisCreate
+        repository_analysis: RepositoryAnalysisCreate
     ) -> RepositoryAnalysis:
         return RepositoryAnalysisRepository.create(
             db=db,
-            repository_analysis=repository_analysis_create
+            repository_analysis=repository_analysis
     )

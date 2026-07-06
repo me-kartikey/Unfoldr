@@ -79,10 +79,10 @@ class RepositoryAnalyzer:
                     encoding="utf-8",
                     errors="ignore"
                 ).lower()
-                for keyword, framework in FRAMEWORK_PATTERNS[item.name].items():
-                    if keyword.lower() in content:
-                        frameworks.add(framework)
-                return frameworks
+                    for keyword, framework in FRAMEWORK_PATTERNS[item.name].items():
+                        if keyword.lower() in content:
+                            frameworks.add(framework)
+            return frameworks
         
      # detect the libraries used in the repository based on the presence of specific files and keywords
     @staticmethod
@@ -97,10 +97,10 @@ class RepositoryAnalyzer:
                     encoding="utf-8",
                     errors="ignore"
                 ).lower()
-                for keyword, library in LIBRARY_PATTERNS[item.name].items():
-                    if keyword.lower() in content:
-                        libraries.add(library)
-                return libraries
+                    for keyword, library in LIBRARY_PATTERNS[item.name].items():
+                        if keyword.lower() in content:
+                            libraries.add(library)
+            return libraries
 
 
 
