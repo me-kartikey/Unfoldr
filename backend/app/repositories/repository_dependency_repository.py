@@ -11,16 +11,16 @@ class RepositoryDependencyRepository:
     @staticmethod
     def create(
         db: Session,
-        dependency_data_create: RepositoryDependencyCreate
+        dependency_data: RepositoryDependencyCreate
     ) -> RepositoryDependency:
 
         dependency = RepositoryDependency(
-            repository_id=dependency_data_create.repository_id,
-            name=dependency_data_create.name,
-            version=dependency_data_create.version,
-            language=dependency_data_create.language,
-            package_manager=dependency_data_create.package_manager,
-            dependency_type=dependency_data_create.dependency_type
+            repository_id=dependency_data.repository_id,
+            name=dependency_data.name,
+            version=dependency_data.version,
+            language=dependency_data.language,
+            package_manager=dependency_data.package_manager,
+            dependency_type=dependency_data.dependency_type
         )
 
         db.add(dependency)
