@@ -61,4 +61,11 @@ class Repository(Base):
     "RepositoryDependency",
     back_populates="repository"
     )
+    
+    architecture = relationship(
+    "RepositoryArchitecture",
+    back_populates="repository",
+    uselist=False
+    ) 
     from app.models.repository_dependency import RepositoryDependency
+    from app.models.repository_architecture import RepositoryArchitecture
