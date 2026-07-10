@@ -19,6 +19,7 @@ class RepositoryArchitectureRepository:
         architecture = RepositoryArchitecture(
             repository_id=architecture_data.repository_id,
             project_type=architecture_data.project_type,
+            architecture_pattern=architecture_data.architecture_pattern,
             entry_points=json.dumps(
                 architecture_data.entry_points
             ),

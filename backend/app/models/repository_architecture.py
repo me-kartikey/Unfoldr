@@ -58,3 +58,8 @@ class RepositoryArchitecture(Base):
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC)
     )
+
+    architecture_pattern: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )

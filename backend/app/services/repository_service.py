@@ -140,6 +140,7 @@ class RepositoryService:
             repository_id=repository.id,
             project_type=architecture["project_type"],
             entry_points=architecture["entry_points"],
+            architecture_pattern=architecture["architecture_pattern"],
             root_folders=architecture["root_folders"],
             config_files=architecture["config_files"]
         )

@@ -7,6 +7,8 @@ class RepositoryArchitectureCreate(BaseModel):
 
     project_type: str
 
+    architecture_pattern: str
+
     entry_points: list[str]
 
     root_folders: list[str]
@@ -21,6 +23,8 @@ class RepositoryArchitectureResponse(BaseModel):
     repository_id: str
 
     project_type: str
+
+    architecture_pattern: str
 
     entry_points: list[str]
 
