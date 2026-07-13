@@ -1,10 +1,22 @@
-DEVOPS_FILES = {
-    "Dockerfile": "Docker",
-    "docker-compose.yml": "Docker Compose",
-    ".github": "GitHub Actions",
-    ".gitlab-ci.yml": "GitLab CI",
-    "Jenkinsfile": "Jenkins",
+DEVOPS_TOOLS = {
+    "docker": "Docker",
+    "kubernetes": "Kubernetes",
     "helm": "Helm",
     "terraform": "Terraform",
-    "k8s": "Kubernetes"
+    "ansible": "Ansible",
+    "vagrant": "Vagrant",
+    "docker-compose": "Docker Compose"
 }
+
+DEVOPS_FILES = [
+    "requirements.txt",
+    "pyproject.toml",
+    "Pipfile",
+    "package.json",
+    "composer.json",
+    "pom.xml",
+    "Cargo.toml",
+    "go.mod",
+    "Dockerfile",
+    "docker-compose.yml"
+]

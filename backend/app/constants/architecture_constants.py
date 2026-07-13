@@ -71,6 +71,12 @@ IGNORE_FOLDERS = {
     "build"
 }
 
+HEXAGONAL_FOLDERS = {
+    "adapters",
+    "ports"
+}
+
+
 @staticmethod
 def detect_architecture_pattern(
     root_folders: list[str]
