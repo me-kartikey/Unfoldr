@@ -1,49 +1,21 @@
 from pathlib import Path
+from app.constants.architecture_constants import (
+    ENTRY_POINTS,
+    CONFIG_FILES,
+    LAYERED_FOLDERS,
+    MVC_FOLDERS,
+    CLEAN_ARCHITECTURE_FOLDERS,
+    MICROSERVICE_HINTS,
+)
 
+from app.constants.framework_constants import (
+    BACKEND_FRAMEWORKS,
+    FRONTEND_FRAMEWORKS
+)
 
-ENTRY_POINTS = [
-    "main.py",
-    "app.py",
-    "manage.py",
-    "server.py",
-    "index.js",
-    "server.js",
-    "main.js",
-    "index.ts",
-    "main.ts",
-    "Program.cs"
-]
-
-CONFIG_FILES = [
-    "requirements.txt",
-    "package.json",
-    "pyproject.toml",
-    "Dockerfile",
-    "docker-compose.yml",
-    ".env",
-    ".env.example",
-    "README.md",
-    ".gitignore",
-    "vite.config.js",
-    "vite.config.ts",
-    "next.config.js",
-    "composer.json",
-    "pom.xml",
-    "build.gradle"
-]
-
-IGNORE_FOLDERS = {
-    ".git",
-    ".github",
-    ".vscode",
-    ".idea",
-    "__pycache__",
-    "node_modules",
-    "venv",
-    ".venv",
-    "dist",
-    "build"
-}
+from app.constants.devops_constants import DEVOPS_FILES
+from app.constants.testing_constants import TESTING_FRAMEWORKS
+from app.constants.architecture_constants import IGNORE_FOLDERS
 
 
 class ArchitectureAnalyzer:
