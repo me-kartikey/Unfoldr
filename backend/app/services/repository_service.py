@@ -139,10 +139,23 @@ class RepositoryService:
         repository_architecture = RepositoryArchitectureCreate(
             repository_id=repository.id,
             project_type=architecture["project_type"],
-            entry_points=architecture["entry_points"],
+            backend_framework=architecture["backend_framework"],
+            frontend_framework=architecture["frontend_framework"],
             architecture_pattern=architecture["architecture_pattern"],
+            entry_points=architecture["entry_points"],
             root_folders=architecture["root_folders"],
-            config_files=architecture["config_files"]
+            config_files=architecture["config_files"],
+            databases=architecture["databases"],
+            orms=architecture["orms"],
+            authentication_methods=architecture["authentication_methods"],
+            api_styles=architecture["api_styles"],
+            devops_tools=architecture["devops"],
+            cicd_tools=architecture["cicd"],
+            testing_frameworks=architecture["testing"],
+            code_quality_tools=architecture["code_quality"],
+            environment_files=architecture["environment"],
+            deployment_platforms=architecture["deployment"],
+            repository_characteristics=architecture["repository_characteristics"]
         )
 
         RepositoryArchitectureService.create_architecture(
