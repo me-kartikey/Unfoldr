@@ -38,3 +38,9 @@ requirement/
 
 #storage
 storage/
+
+#venv2nd
+venv_linux/
+
+# todo
+todo/
