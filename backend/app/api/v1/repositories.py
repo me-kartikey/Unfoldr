@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, File, UploadFile
+import time
 from sqlalchemy.orm import Session
 from app.services.storage_service import StorageService
 
@@ -53,22 +54,39 @@ def get_repository(
 def upload_repository(
     file: UploadFile = File(...),
     db: Session = Depends(get_db)):
+    # Total Scan Time start
+    total_start = time.perf_counter()  # added to check timing
+
     repository_id, repository_path = (
     StorageService.create_repository_directory()
 )
+    # Saving ZIP timing
+    start_save = time.perf_counter()  # added to check timing
     zip_path = StorageService.save_zip(
     repository_path=repository_path,
     uploaded_file=file
 )
+    save_time = time.perf_counter() - start_save  # added to check timing
+    print(f"Saving uploaded ZIP: {save_time:.3f}s")
+
+    # Extracting ZIP timing
+    start_extract = time.perf_counter()  # added to check timing
     extract_path = StorageService.extract_zip(
     zip_path=zip_path,
     repository_path=repository_path
 )
+    extract_time = time.perf_counter() - start_extract  # added to check timing
+    print(f"ZIP Extraction: {extract_time:.3f}s")
+
     repository = RepositoryService.create_uploaded_repository(
         db=db,
         file_name=file.filename,
         repository_path=repository_path
     )
+
+    # Total Scan Time end
+    total_time = time.perf_counter() - total_start  # added to check timing
+    print(f"Total Scan Time: {total_time:.3f}s")
 
     return repository
 

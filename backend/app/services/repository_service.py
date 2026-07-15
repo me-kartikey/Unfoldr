@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 
 from sqlalchemy.orm import Session
 
@@ -105,15 +106,20 @@ class RepositoryService:
         )
 
         # Dependency Analysis
+        start_dep_analysis = time.perf_counter()  # added to check timing
         dependencies = DependencyAnalyzer.detect_dependencies(
             repository_root
         )
+        dep_analysis_time = time.perf_counter() - start_dep_analysis  # added to check timing
+        print(f"Dependency Analysis: {dep_analysis_time:.3f}s")
 
         print("Dependency found:", dependencies)
 
+        # Saving Dependencies
+        start_dep_save = time.perf_counter()  # added to check timing
         for dependency in dependencies:
 
-            print("Saving dependency:", dependency)
+            # print("Saving dependency:", dependency)
 
             repository_dependency = RepositoryDependencyCreate(
                 repository_id=repository.id,
@@ -128,14 +134,21 @@ class RepositoryService:
                 db=db,
                 dependency_data=repository_dependency
             )
+        dep_save_time = time.perf_counter() - start_dep_save  # added to check timing
+        print(f"Dependency Save: {dep_save_time:.3f}s")
 
         # Architecture Analysis
+        start_arch_analysis = time.perf_counter()  # added to check timing
         architecture = ArchitectureAnalyzer.analyze_repository(
             repository_root
         )
+        arch_analysis_time = time.perf_counter() - start_arch_analysis  # added to check timing
+        print(f"Architecture Analysis: {arch_analysis_time:.3f}s")
 
         print(f"Architecture: {architecture}")
 
+        # Saving Architecture
+        start_arch_save = time.perf_counter()  # added to check timing
         repository_architecture = RepositoryArchitectureCreate(
             repository_id=repository.id,
             project_type=architecture["project_type"],
@@ -162,5 +175,15 @@ class RepositoryService:
             db=db,
             architecture_data=repository_architecture
         )
+        arch_save_time = time.perf_counter() - start_arch_save  # added to check timing
+        print(f"Architecture Save: {arch_save_time:.3f}s")
+
+        # Updating Repository Status
+        start_status = time.perf_counter()  # added to check timing
+        repository.status = "completed"
+        db.commit()
+        db.refresh(repository)
+        status_time = time.perf_counter() - start_status  # added to check timing
+        print(f"Updating Repository Status: {status_time:.3f}s")
 
         return repository
