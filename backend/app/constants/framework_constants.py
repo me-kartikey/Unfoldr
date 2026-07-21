@@ -10,7 +10,7 @@ BACKEND_FRAMEWORKS = {
     "spring-web": "Spring Boot",
     "laravel/framework": "Laravel",
     "symfony/framework-bundle": "Symfony",
-    "gin": "Gin",
+    "github.com/gin-gonic/gin": "Gin",
     "fiber": "Fiber",
     "echo": "Echo",
     "actix-web": "Actix",

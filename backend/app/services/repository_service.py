@@ -26,6 +26,7 @@ from app.services.repository_dependency_service import (
     RepositoryDependencyService,
 )
 
+from app.generator.documents_generator import DocumentsGenerator
 
 class RepositoryService:
 
@@ -100,7 +101,7 @@ class RepositoryService:
 
         print(f"Repository analysis data: {repository_analysis}")
 
-        RepositoryAnalysisService.create_analysis(
+        analysis_record = RepositoryAnalysisService.create_analysis(
             db=db,
             repository_analysis=repository_analysis
         )
@@ -136,6 +137,13 @@ class RepositoryService:
             )
         dep_save_time = time.perf_counter() - start_dep_save  # added to check timing
         print(f"Dependency Save: {dep_save_time:.3f}s")
+        
+        repository_dependencies = (
+            RepositoryDependencyService.get_repository_dependencies(
+                db=db,
+                repository_id=repository.id
+                )
+        )
 
         # Architecture Analysis
         start_arch_analysis = time.perf_counter()  # added to check timing
@@ -171,12 +179,24 @@ class RepositoryService:
             repository_characteristics=architecture["repository_characteristics"]
         )
 
-        RepositoryArchitectureService.create_architecture(
+        architecture_record = RepositoryArchitectureService.create_architecture(
             db=db,
             architecture_data=repository_architecture
         )
         arch_save_time = time.perf_counter() - start_arch_save  # added to check timing
         print(f"Architecture Save: {arch_save_time:.3f}s")
+
+        documentation = DocumentsGenerator.generate(
+            repository=repository,
+            analysis=repository_analysis,
+            architecture=repository_architecture,
+            dependencies=repository_dependencies,
+        )
+
+        DocumentsGenerator.save_documentation(
+            output_path=repository_root / "documentation.md",
+            content=documentation,
+        )
 
         # Updating Repository Status
         start_status = time.perf_counter()  # added to check timing
