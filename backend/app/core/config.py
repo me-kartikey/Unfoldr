@@ -18,6 +18,9 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
+    chroma_db_path: str = "storage/chroma"
+    chroma_collection_name: str = "repositories"
+
 
 @lru_cache
 def get_settings() -> Settings:
