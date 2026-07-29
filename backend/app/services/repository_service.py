@@ -1,6 +1,10 @@
 from pathlib import Path
 import time
 
+from app.services.chunking_service import ChunkingService
+from app.services.embedding_service import EmbeddingService
+from app.services.vector_store_service import VectorStoreService
+
 from sqlalchemy.orm import Session
 
 from app.analyzers.architecture_analyzer import ArchitectureAnalyzer
@@ -197,6 +201,47 @@ class RepositoryService:
             output_path=repository_root / "documentation.md",
             content=documentation,
         )
+
+        chunking_service = ChunkingService()
+        embedding_service = EmbeddingService()
+        vector_store = VectorStoreService()
+
+        chunks = chunking_service.chunk_document(documentation)
+
+        ids = []
+        documents = []
+        embeddings = []
+        metadatas = []
+
+        for chunk in chunks:
+            ids.append(
+                f"{repository.id}_{chunk['id']}"
+            )
+
+            documents.append(
+                chunk["content"]
+            )
+
+            embeddings.append(
+                embedding_service.generate_embedding(
+                    chunk["content"]
+                )
+            )
+
+            metadatas.append(
+                {
+                    "repository_id": repository.id,
+                    "title": chunk["title"]
+                }
+            )
+
+        vector_store.add_documents(
+            ids=ids,
+            documents=documents,
+            embeddings=embeddings,
+            metadatas=metadatas
+        )
+    
 
         # Updating Repository Status
         start_status = time.perf_counter()  # added to check timing

@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     upload_dir: str
 
+    google_api_key: str
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
