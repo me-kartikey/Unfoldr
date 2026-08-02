@@ -5,7 +5,7 @@ import Upload from "@/pages/Upload/Upload";
 
 import WorkspaceLayout from "@/layouts/WorkspaceLayout";
 
-import Overview from "@/pages/Workspace/Overview";
+import Overview from "@/pages/Workspace/Overview/Overview";
 import KnowledgeBase from "@/pages/Workspace/KnowledgeBase";
 import Architecture from "@/pages/Workspace/Architecture";
 import DeveloperAssistant from "@/pages/Workspace/DeveloperAssistant";
