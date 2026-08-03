@@ -1,4 +1,4 @@
-# major_final_project
+# Unfoldr
 # AI Developer Onboarding Assistant
 
 ## Overview
