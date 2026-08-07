@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 import time
+from app.analyzers.repository_analyzer import RepositoryAnalyzer
 from sqlalchemy.orm import Session
 from app.services.storage_service import StorageService
 
@@ -9,6 +10,13 @@ from app.schemas.repository import (
     RepositoryResponse
 )
 from app.services.repository_service import RepositoryService
+from app.services.repository_analysis_service import (
+    RepositoryAnalysisService
+)
+
+from app.schemas.repository_analysis import (
+    RepositoryAnalysisCreate
+)
 
 router = APIRouter(
     prefix="/repositories",
@@ -75,18 +83,15 @@ def upload_repository(
     zip_path=zip_path,
     repository_path=repository_path
 )
-    extract_time = time.perf_counter() - start_extract  # added to check timing
-    print(f"ZIP Extraction: {extract_time:.3f}s")
+   
 
     repository = RepositoryService.create_uploaded_repository(
         db=db,
         file_name=file.filename,
         repository_path=repository_path
     )
+    
 
-    # Total Scan Time end
-    total_time = time.perf_counter() - total_start  # added to check timing
-    print(f"Total Scan Time: {total_time:.3f}s")
 
     return repository
 

@@ -82,12 +82,19 @@ class RepositoryService:
         )
 
         extracted_path = repository_path / "extracted"
+        
 
         repository_root = next(
             item
             for item in extracted_path.iterdir()
             if item.is_dir()
         )
+        print("\n====== EXTRACTED CONTENT ======")
+
+        for item in extracted_path.rglob("*"):
+            print(item)
+
+        print("===============================\n")
 
         # Repository Analysis
         analysis = RepositoryAnalyzer.analyze_repository(

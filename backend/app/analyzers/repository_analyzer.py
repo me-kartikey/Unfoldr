@@ -57,6 +57,14 @@ class RepositoryAnalyzer:
         languages = RepositoryAnalyzer.detect_languages(repository_path)
         frameworks = RepositoryAnalyzer.detect_frameworks(repository_path)
         libraries = RepositoryAnalyzer.detect_libraries(repository_path)
+        print("\n===== ANALYZER DEBUG =====")
+        print(f"Repository Path: {repository_path}")
+        print(f"Total Files: {total_files}")
+        print(f"Extensions: {extensions}")
+        print(f"Languages: {languages}")
+        print(f"Frameworks: {frameworks}")
+        print(f"Libraries: {libraries}")
+        print("==========================\n")
 
         return {
             "total_files": total_files,
