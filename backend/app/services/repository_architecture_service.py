@@ -23,3 +23,13 @@ class RepositoryArchitectureService:
             db=db,
             architecture_data=architecture_data
         )
+
+    @staticmethod
+    def get_architecture(
+        db: Session,
+        repository_id: str
+    ) -> RepositoryArchitecture | None:
+        return RepositoryArchitectureRepository.get_by_repository_id(
+            db=db,
+            repository_id=repository_id
+        )

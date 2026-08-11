@@ -21,7 +21,7 @@ function AppRouter() {
         <Route path="/upload" element={<Upload />} />
 
         {/* Workspace Routes */}
-        <Route path="/workspace" element={<WorkspaceLayout />}>
+        <Route path="/workspace/:repositoryId" element={<WorkspaceLayout />}>
           <Route index element={<Overview />} />
           <Route path="knowledge-base" element={<KnowledgeBase />} />
           <Route path="architecture" element={<Architecture />} />

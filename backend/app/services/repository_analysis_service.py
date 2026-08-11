@@ -16,4 +16,14 @@ class RepositoryAnalysisService:
         return RepositoryAnalysisRepository.create(
             db=db,
             repository_analysis=repository_analysis
-    )
+        )
+
+    @staticmethod
+    def get_analysis(
+        db: Session,
+        repository_id: str
+    ) -> RepositoryAnalysis | None:
+        return RepositoryAnalysisRepository.get_by_repository_id(
+            db=db,
+            repository_id=repository_id
+        )

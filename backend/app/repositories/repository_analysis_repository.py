@@ -28,3 +28,16 @@ class RepositoryAnalysisRepository:
         db.refresh(repository_analysis)
 
         return repository_analysis
+
+    @staticmethod
+    def get_by_repository_id(
+        db: Session,
+        repository_id: str
+    ) -> RepositoryAnalysis | None:
+        return (
+            db.query(RepositoryAnalysis)
+            .filter(
+                RepositoryAnalysis.repository_id == repository_id
+            )
+            .first()
+        )

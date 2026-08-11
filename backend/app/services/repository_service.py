@@ -62,11 +62,11 @@ class RepositoryService:
         )
 
     @staticmethod
-    def create_uploaded_repository(
+    def initialize_uploaded_repository(
         db: Session,
         file_name: str,
         repository_path: Path
-    ):
+    ) -> Repository:
 
         repository_name = file_name.removesuffix(".zip")
 
@@ -80,9 +80,38 @@ class RepositoryService:
             db=db,
             repository_data=repository_data
         )
+        
+        repository.status = "pending"
+        db.commit()
+        db.refresh(repository)
+        return repository
+
+    @staticmethod
+    def run_analysis_pipeline(
+        db: Session,
+        repository_id: str,
+        repository_path: Path,
+        file_name: str
+    ) -> Repository:
+        from app.services.storage_service import StorageService
+
+        repository = RepositoryRepository.get_by_id(db=db, repository_id=repository_id)
+        if not repository:
+            raise ValueError(f"Repository {repository_id} not found")
+
+        # Update status to indexing
+        repository.status = "indexing"
+        db.commit()
+        db.refresh(repository)
 
         extracted_path = repository_path / "extracted"
-        
+        zip_path = repository_path / "source.zip"
+
+        # Extract ZIP in background task
+        StorageService.extract_zip(
+            zip_path=zip_path,
+            repository_path=repository_path
+        )
 
         repository_root = next(
             item
@@ -116,23 +145,21 @@ class RepositoryService:
             db=db,
             repository_analysis=repository_analysis
         )
+        db.commit()
 
         # Dependency Analysis
-        start_dep_analysis = time.perf_counter()  # added to check timing
+        start_dep_analysis = time.perf_counter()
         dependencies = DependencyAnalyzer.detect_dependencies(
             repository_root
         )
-        dep_analysis_time = time.perf_counter() - start_dep_analysis  # added to check timing
+        dep_analysis_time = time.perf_counter() - start_dep_analysis
         print(f"Dependency Analysis: {dep_analysis_time:.3f}s")
 
         print("Dependency found:", dependencies)
 
         # Saving Dependencies
-        start_dep_save = time.perf_counter()  # added to check timing
+        start_dep_save = time.perf_counter()
         for dependency in dependencies:
-
-            # print("Saving dependency:", dependency)
-
             repository_dependency = RepositoryDependencyCreate(
                 repository_id=repository.id,
                 name=dependency["name"],
@@ -146,7 +173,8 @@ class RepositoryService:
                 db=db,
                 dependency_data=repository_dependency
             )
-        dep_save_time = time.perf_counter() - start_dep_save  # added to check timing
+        db.commit()
+        dep_save_time = time.perf_counter() - start_dep_save
         print(f"Dependency Save: {dep_save_time:.3f}s")
         
         repository_dependencies = (
@@ -157,17 +185,17 @@ class RepositoryService:
         )
 
         # Architecture Analysis
-        start_arch_analysis = time.perf_counter()  # added to check timing
+        start_arch_analysis = time.perf_counter()
         architecture = ArchitectureAnalyzer.analyze_repository(
             repository_root
         )
-        arch_analysis_time = time.perf_counter() - start_arch_analysis  # added to check timing
+        arch_analysis_time = time.perf_counter() - start_arch_analysis
         print(f"Architecture Analysis: {arch_analysis_time:.3f}s")
 
         print(f"Architecture: {architecture}")
 
         # Saving Architecture
-        start_arch_save = time.perf_counter()  # added to check timing
+        start_arch_save = time.perf_counter()
         repository_architecture = RepositoryArchitectureCreate(
             repository_id=repository.id,
             project_type=architecture["project_type"],
@@ -194,7 +222,8 @@ class RepositoryService:
             db=db,
             architecture_data=repository_architecture
         )
-        arch_save_time = time.perf_counter() - start_arch_save  # added to check timing
+        db.commit()
+        arch_save_time = time.perf_counter() - start_arch_save
         print(f"Architecture Save: {arch_save_time:.3f}s")
 
         documentation = DocumentsGenerator.generate(
@@ -248,14 +277,13 @@ class RepositoryService:
             embeddings=embeddings,
             metadatas=metadatas
         )
-    
 
         # Updating Repository Status
-        start_status = time.perf_counter()  # added to check timing
+        start_status = time.perf_counter()
         repository.status = "completed"
         db.commit()
         db.refresh(repository)
-        status_time = time.perf_counter() - start_status  # added to check timing
+        status_time = time.perf_counter() - start_status
         print(f"Updating Repository Status: {status_time:.3f}s")
 
         return repository

@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Depends, File, UploadFile
+# Edited on 2026-08-11 to support asynchronous repository analysis and polling.
+from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, BackgroundTasks
 import time
+import json
+from pathlib import Path
 from app.analyzers.repository_analyzer import RepositoryAnalyzer
 from sqlalchemy.orm import Session
 from app.services.storage_service import StorageService
@@ -13,9 +16,22 @@ from app.services.repository_service import RepositoryService
 from app.services.repository_analysis_service import (
     RepositoryAnalysisService
 )
+from app.services.repository_architecture_service import (
+    RepositoryArchitectureService
+)
+from app.services.repository_dependency_service import (
+    RepositoryDependencyService
+)
 
 from app.schemas.repository_analysis import (
-    RepositoryAnalysisCreate
+    RepositoryAnalysisCreate,
+    RepositoryAnalysisResponse
+)
+from app.schemas.repository_architecture import (
+    RepositoryArchitectureResponse
+)
+from app.schemas.repository_dependency import (
+    RepositoryDependencyResponse
 )
 
 router = APIRouter(
@@ -54,44 +70,233 @@ def get_repository(
     db: Session=Depends(get_db)):
     return RepositoryService.get_repository(db, repository_id)
 
+# Edited on 2026-08-11: Background task function to run repository analysis asynchronously.
+def analyze_repository_task(repository_id: str, repository_path: str, file_name: str):
+    from app.db.session import session_local
+    from app.services.repository_service import RepositoryService
+    
+    db = session_local()
+    try:
+        RepositoryService.run_analysis_pipeline(
+            db=db,
+            repository_id=repository_id,
+            repository_path=Path(repository_path),
+            file_name=file_name
+        )
+    except Exception as e:
+        print(f"Error in background analysis task for repository {repository_id}: {e}")
+        import traceback
+        traceback.print_exc()
+        try:
+            repository = RepositoryService.get_repository(db, repository_id)
+            if repository:
+                repository.status = "failed"
+                db.commit()
+        except Exception as db_err:
+            print(f"Error updating fail status for repository {repository_id}: {db_err}")
+    finally:
+        db.close()
+
+
 @router.post(
         "/upload",
         response_model=RepositoryResponse
         )
-
 def upload_repository(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db)):
-    # Total Scan Time start
-    total_start = time.perf_counter()  # added to check timing
-
-    repository_id, repository_path = (
-    StorageService.create_repository_directory()
-)
-    # Saving ZIP timing
-    start_save = time.perf_counter()  # added to check timing
+    # Edited on 2026-08-11 to make upload asynchronous and schedule analysis via background task.
+    repository_id, repository_path = StorageService.create_repository_directory()
+    
+    # Save the uploaded ZIP
     zip_path = StorageService.save_zip(
-    repository_path=repository_path,
-    uploaded_file=file
-)
-    save_time = time.perf_counter() - start_save  # added to check timing
-    print(f"Saving uploaded ZIP: {save_time:.3f}s")
-
-    # Extracting ZIP timing
-    start_extract = time.perf_counter()  # added to check timing
-    extract_path = StorageService.extract_zip(
-    zip_path=zip_path,
-    repository_path=repository_path
-)
-   
-
-    repository = RepositoryService.create_uploaded_repository(
+        repository_path=repository_path,
+        uploaded_file=file
+    )
+    
+    # Initialize repository with "pending" status
+    repository = RepositoryService.initialize_uploaded_repository(
         db=db,
         file_name=file.filename,
         repository_path=repository_path
     )
     
-
-
+    # Add background task to extract ZIP and run analysis pipeline
+    background_tasks.add_task(
+        analyze_repository_task,
+        repository_id=repository.id,
+        repository_path=str(repository_path),
+        file_name=file.filename
+    )
+    
     return repository
+
+
+@router.get(
+    "/{repository_id}/analysis",
+    response_model=RepositoryAnalysisResponse
+)
+def get_repository_analysis(
+    repository_id: str,
+    db: Session = Depends(get_db)
+):
+    analysis = RepositoryAnalysisService.get_analysis(db=db, repository_id=repository_id)
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found for this repository")
+    
+    return RepositoryAnalysisResponse(
+        id=analysis.id,
+        repository_id=analysis.repository_id,
+        total_files=analysis.total_files,
+        extensions=json.loads(analysis.extensions) if isinstance(analysis.extensions, str) else analysis.extensions,
+        languages=json.loads(analysis.languages) if isinstance(analysis.languages, str) else analysis.languages,
+        frameworks=json.loads(analysis.frameworks) if isinstance(analysis.frameworks, str) else analysis.frameworks,
+        libraries=json.loads(analysis.libraries) if isinstance(analysis.libraries, str) else analysis.libraries
+    )
+
+
+@router.get(
+    "/{repository_id}/architecture",
+    response_model=RepositoryArchitectureResponse
+)
+def get_repository_architecture(
+    repository_id: str,
+    db: Session = Depends(get_db)
+):
+    architecture = RepositoryArchitectureService.get_architecture(db=db, repository_id=repository_id)
+    if not architecture:
+        raise HTTPException(status_code=404, detail="Architecture not found for this repository")
+    
+    return architecture
+
+
+@router.get(
+    "/{repository_id}/dependencies",
+    response_model=list[RepositoryDependencyResponse]
+)
+def get_repository_dependencies(
+    repository_id: str,
+    db: Session = Depends(get_db)
+):
+    dependencies = RepositoryDependencyService.get_repository_dependencies(db=db, repository_id=repository_id)
+    return dependencies
+
+
+@router.get(
+    "/{repository_id}/documentation"
+)
+def get_repository_documentation(
+    repository_id: str,
+    db: Session = Depends(get_db)
+):
+    repository = RepositoryService.get_repository(db=db, repository_id=repository_id)
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    
+    extracted_path = Path(repository.storage_path) / "extracted"
+    try:
+        repository_root = next(
+            item for item in extracted_path.iterdir() if item.is_dir()
+        )
+    except StopIteration:
+        repository_root = extracted_path
+
+    doc_file = repository_root / "documentation.md"
+    if not doc_file.exists():
+        raise HTTPException(status_code=404, detail="Documentation file not found")
+    
+    try:
+        content = doc_file.read_text(encoding="utf-8", errors="ignore")
+        return {"documentation": content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read documentation: {str(e)}")
+
+
+@router.get(
+    "/{repository_id}/files"
+)
+def get_repository_files(
+    repository_id: str,
+    db: Session = Depends(get_db)
+):
+    repository = RepositoryService.get_repository(db=db, repository_id=repository_id)
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    
+    extracted_path = Path(repository.storage_path) / "extracted"
+    try:
+        repository_root = next(
+            item for item in extracted_path.iterdir() if item.is_dir()
+        )
+    except StopIteration:
+        repository_root = extracted_path
+
+    def build_tree(path: Path, base_path: Path) -> dict | None:
+        name = path.name
+        rel_path = str(path.relative_to(base_path)).replace("\\", "/")
+        
+        ignored = {".git", "__pycache__", "node_modules", ".venv", "venv", ".idea", ".vscode", ".oxlintrc.json", ".gitignore"}
+        if name in ignored:
+            return None
+
+        if path.is_file():
+            return {
+                "name": name,
+                "path": rel_path,
+                "type": "file"
+            }
+        elif path.is_dir():
+            children = []
+            try:
+                for child in sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
+                    child_tree = build_tree(child, base_path)
+                    if child_tree:
+                        children.append(child_tree)
+            except Exception:
+                pass
+            return {
+                "name": name,
+                "path": rel_path,
+                "type": "dir",
+                "children": children
+            }
+        return None
+
+    tree = build_tree(repository_root, repository_root)
+    return tree or {"name": repository.name, "path": "", "type": "dir", "children": []}
+
+
+@router.get(
+    "/{repository_id}/file"
+)
+def get_file_content(
+    repository_id: str,
+    path: str,
+    db: Session = Depends(get_db)
+):
+    repository = RepositoryService.get_repository(db=db, repository_id=repository_id)
+    if not repository:
+        raise HTTPException(status_code=404, detail="Repository not found")
+    
+    extracted_path = Path(repository.storage_path) / "extracted"
+    try:
+        repository_root = next(
+            item for item in extracted_path.iterdir() if item.is_dir()
+        )
+    except StopIteration:
+        repository_root = extracted_path
+
+    safe_path = (repository_root / path).resolve()
+    if not str(safe_path).startswith(str(repository_root.resolve())):
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if not safe_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    try:
+        content = safe_path.read_text(encoding="utf-8", errors="ignore")
+        return {"content": content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read file content: {str(e)}")
 

@@ -1,19 +1,23 @@
 import { NavLink } from "react-router-dom";
 
+// Edited on 2026-08-11: Updated SidebarItem to accept and pass the "end" prop to NavLink for exact path matches.
 interface SidebarItemProps {
   label: string;
   path: string;
   icon: React.ElementType;
+  end?: boolean;
 }
 
 function SidebarItem({
   label,
   path,
   icon: Icon,
+  end,
 }: SidebarItemProps) {
   return (
     <NavLink
       to={path}
+      end={end}
       className={({ isActive }) =>
         `
         flex

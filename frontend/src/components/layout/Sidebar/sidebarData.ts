@@ -12,6 +12,7 @@ export const sidebarItems = [
     label: "Overview",
     path: "/workspace",
     icon: LayoutDashboard,
+    end: true, // Edited on 2026-08-11: Added end: true to make NavLink matching exact for the Overview page.
   },
   {
     label: "Knowledge Base",

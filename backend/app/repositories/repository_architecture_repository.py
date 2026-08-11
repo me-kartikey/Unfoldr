@@ -41,3 +41,16 @@ class RepositoryArchitectureRepository:
         db.refresh(architecture)
 
         return architecture
+
+    @staticmethod
+    def get_by_repository_id(
+        db: Session,
+        repository_id: str
+    ) -> RepositoryArchitecture | None:
+        return (
+            db.query(RepositoryArchitecture)
+            .filter(
+                RepositoryArchitecture.repository_id == repository_id
+            )
+            .first()
+        )
