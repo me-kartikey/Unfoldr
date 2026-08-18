@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 from sqlalchemy.orm import relationship
 
-from sqlalchemy import DateTime, String
+from sqlalchemy import DateTime, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -38,6 +38,13 @@ class Repository(Base):
         default="pending"
     )
 
+    # Added on 13-08-2026: user_id foreign key to associate repositories with their owner user
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC)
@@ -47,6 +54,12 @@ class Repository(Base):
         DateTime(timezone=True),
         default=lambda: datetime.now(UTC),
         onupdate=lambda: datetime.now(UTC)
+    )
+
+    # Added on 13-08-2026: Relationship linking repository back to its owner User
+    user = relationship(
+        "User",
+        back_populates="repositories"
     )
 
     #analysis relationship with RepositoryAnalysis
@@ -69,3 +82,4 @@ class Repository(Base):
     ) 
     from app.models.repository_dependency import RepositoryDependency
     from app.models.repository_architecture import RepositoryArchitecture
+    from app.models.user import User

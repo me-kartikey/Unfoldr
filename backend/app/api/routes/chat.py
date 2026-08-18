@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.schemas.chat import (
     ChatRequest,
@@ -8,6 +8,10 @@ from app.schemas.chat import (
 from app.services.ai_assistant_service import (
     AIAssistantService
 )
+from app.api.deps import check_repository_owner
+from app.models.repository import Repository
+
+# Edited on 13-08-2026: Protect the chat endpoint via check_repository_owner authorization
 
 router = APIRouter(
     prefix="/chat",
@@ -23,7 +27,8 @@ assistant = AIAssistantService()
 )
 def chat(
     repository_id: str,
-    request: ChatRequest
+    request: ChatRequest,
+    repository: Repository = Depends(check_repository_owner)
 ):
 
     response = assistant.ask_question(

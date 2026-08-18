@@ -8,38 +8,29 @@ class RepositoryAnalyzer:
 # count the total number of files in the repository
     @staticmethod
     def count_files(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> int:
-
-        total_files = 0
-
-        for item in repository_path.rglob("*"):
-            if item.is_file():
-                total_files += 1
-
-        return total_files
+        # Edited on 2026-08-13: Refactored to count from pre-scanned file list
+        return len(tracked_files)
     
     # detect the extensions of the files in the repository
     @staticmethod
     def detect_extensions(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> set[str]:
-
+        # Edited on 2026-08-13: Refactored to extract extensions from pre-scanned file list
         extensions = set()
-
-        for item in repository_path.rglob("*"):
-            if item.is_file():
-                extensions.add(item.suffix.lower())
-
+        for item in tracked_files:
+            extensions.add(item.suffix.lower())
         return extensions
     
     # detect the programming languages used in the repository based on the file extensions
     @staticmethod
     def detect_languages(
-    repository_path: Path
+        extensions: set[str]
     ) -> set[str]:
+        # Edited on 2026-08-13: Refactored to check from pre-scanned extensions list
         languages = set()
-        extensions = RepositoryAnalyzer.detect_extensions(repository_path)
         for ext in extensions:
             language=EXTENSION_LANGUAGE_MAP.get(ext)
             if language:
@@ -51,12 +42,17 @@ class RepositoryAnalyzer:
     def analyze_repository(
         repository_path: Path
     ) -> dict[str, any]:
+        # Edited on 2026-08-13: Refactored to index repository files once and reuse the tracked files list
+        from app.core.file_scanner import FileScanner
 
-        total_files = RepositoryAnalyzer.count_files(repository_path)
-        extensions = RepositoryAnalyzer.detect_extensions(repository_path)
-        languages = RepositoryAnalyzer.detect_languages(repository_path)
-        frameworks = RepositoryAnalyzer.detect_frameworks(repository_path)
-        libraries = RepositoryAnalyzer.detect_libraries(repository_path)
+        tracked_files = FileScanner.scan_repository(repository_path)
+
+        total_files = RepositoryAnalyzer.count_files(tracked_files)
+        extensions = RepositoryAnalyzer.detect_extensions(tracked_files)
+        languages = RepositoryAnalyzer.detect_languages(extensions)
+        frameworks = RepositoryAnalyzer.detect_frameworks(tracked_files)
+        libraries = RepositoryAnalyzer.detect_libraries(tracked_files)
+
         print("\n===== ANALYZER DEBUG =====")
         print(f"Repository Path: {repository_path}")
         print(f"Total Files: {total_files}")
@@ -77,38 +73,44 @@ class RepositoryAnalyzer:
     # detect the frameworks used in the repository based on the presence of specific files and keywords
     @staticmethod
     def detect_frameworks(
-        repository_path: Path
-        ) -> set[str]:
-
-            frameworks = set()
-            for item in repository_path.rglob("*"):
-                if (item.is_file() and item.name in FRAMEWORK_PATTERNS):
+        tracked_files: list[Path]
+    ) -> set[str]:
+        # Edited on 2026-08-13: Refactored to filter framework configuration files in-memory
+        frameworks = set()
+        for item in tracked_files:
+            if item.name in FRAMEWORK_PATTERNS:
+                try:
                     content = item.read_text(
-                    encoding="utf-8",
-                    errors="ignore"
-                ).lower()
+                        encoding="utf-8",
+                        errors="ignore"
+                    ).lower()
                     for keyword, framework in FRAMEWORK_PATTERNS[item.name].items():
                         if keyword.lower() in content:
                             frameworks.add(framework)
-            return frameworks
+                except Exception:
+                    continue
+        return frameworks
         
      # detect the libraries used in the repository based on the presence of specific files and keywords
     @staticmethod
     def detect_libraries(
-        repository_path: Path
-        ) -> set[str]:
-
-            libraries = set()
-            for item in repository_path.rglob("*"):
-                if (item.is_file() and item.name in LIBRARY_PATTERNS):
+        tracked_files: list[Path]
+    ) -> set[str]:
+        # Edited on 2026-08-13: Refactored to filter library configuration files in-memory
+        libraries = set()
+        for item in tracked_files:
+            if item.name in LIBRARY_PATTERNS:
+                try:
                     content = item.read_text(
-                    encoding="utf-8",
-                    errors="ignore"
-                ).lower()
+                        encoding="utf-8",
+                        errors="ignore"
+                    ).lower()
                     for keyword, library in LIBRARY_PATTERNS[item.name].items():
                         if keyword.lower() in content:
                             libraries.add(library)
-            return libraries
+                except Exception:
+                    continue
+        return libraries
 
 
 

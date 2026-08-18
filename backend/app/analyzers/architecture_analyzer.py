@@ -79,13 +79,17 @@ class ArchitectureAnalyzer:
     def analyze_repository(
         repository_path: Path
     ) -> dict:
+        # Edited on 2026-08-13: Refactored to index repository files once and perform scans in-memory.
+        from app.core.file_scanner import FileScanner
+
+        tracked_files = FileScanner.scan_repository(repository_path)
 
         root_folders = []
         entry_points = []
         config_files = []
 
+        # Root folders and entry points are determined from direct repository children
         for item in repository_path.iterdir():
-
             if (
                 item.is_dir()
                 and item.name not in IGNORE_FOLDERS
@@ -106,13 +110,13 @@ class ArchitectureAnalyzer:
 
         backend_framework = (
             ArchitectureAnalyzer.detect_backend_framework(
-                repository_path
+                tracked_files
             )
         )
 
         frontend_framework = (
             ArchitectureAnalyzer.detect_frontend_framework(
-                repository_path
+                tracked_files
             )
         )
 
@@ -129,67 +133,67 @@ class ArchitectureAnalyzer:
 
         databases = (
             ArchitectureAnalyzer.detect_databases(
-                repository_path
+                tracked_files
             )
         )
 
         orms = (
             ArchitectureAnalyzer.detect_orms(
-                repository_path
+                tracked_files
             )
         )
 
         authentication_methods = (
             ArchitectureAnalyzer.detect_authentication(
-                repository_path
+                tracked_files
             )
         )
 
         api_styles = (
             ArchitectureAnalyzer.detect_api_styles(
-                repository_path
+                tracked_files
             )
         )
 
         devops = (
             ArchitectureAnalyzer.detect_devops(
-                repository_path
+                tracked_files
             )
         )
 
         cicd = (
             ArchitectureAnalyzer.detect_cicd(
-                repository_path
+                tracked_files
             )
         )
 
         testing = (
             ArchitectureAnalyzer.detect_testing(
-                repository_path
+                tracked_files
             )
         )
 
         code_quality = (
             ArchitectureAnalyzer.detect_code_quality(
-                repository_path
+                tracked_files
             )
         )
 
         environment = (
             ArchitectureAnalyzer.detect_environment(
-                repository_path
+                tracked_files
             )
         )
 
         deployment = (
             ArchitectureAnalyzer.detect_deployment(
-                repository_path
+                tracked_files
             )
         )
 
         repository_characteristics = (
             ArchitectureAnalyzer.detect_repository_characteristics(
-                repository_path
+                tracked_files
             )
         )
 
@@ -216,37 +220,30 @@ class ArchitectureAnalyzer:
 
     @staticmethod
     def read_repository_file(
-        repository_path: Path,
+        tracked_files: list[Path],
         file_names: list[str]
     ) -> dict[str, list[str]]:
-
+        # Edited on 2026-08-13: Refactored to query file contents directly from the pre-scanned in-memory tracked_files list.
         contents = {}
 
         for file_name in file_names:
-
             file_contents = []
 
-            files = list(
-                repository_path.rglob(file_name)
-            )
+            # In-memory name filtering (substitutes disk rglob)
+            files = [f for f in tracked_files if f.name == file_name]
 
             for file in files:
-
                 try:
-
                     file_contents.append(
                         file.read_text(
                             encoding="utf-8",
                             errors="ignore"
                         ).lower()
                     )
-
                 except Exception:
-
                     continue
 
             if file_contents:
-
                 contents[file_name] = file_contents
 
         return contents
@@ -256,7 +253,6 @@ class ArchitectureAnalyzer:
         backend_framework: str,
         frontend_framework: str
     ) -> str:
-
         if (
             backend_framework != "Unknown"
             and frontend_framework != "Unknown"
@@ -273,48 +269,38 @@ class ArchitectureAnalyzer:
 
     @staticmethod
     def detect_backend_framework(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> str:
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 BACKEND_FRAMEWORK_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for package, framework in BACKEND_FRAMEWORKS.items():
-
                     if package.lower() in content:
-
                         return framework
 
         return "Unknown"
 
     @staticmethod
     def detect_frontend_framework(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> str:
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 FRONTEND_FRAMEWORK_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for package, framework in FRONTEND_FRAMEWORKS.items():
-
                     if package.lower() in content:
-
                         return framework
 
         return "Unknown"
@@ -323,7 +309,6 @@ class ArchitectureAnalyzer:
     def detect_architecture_pattern(
         root_folders: list[str]
     ) -> str:
-
         folders = {
             folder.lower()
             for folder in root_folders
@@ -345,286 +330,220 @@ class ArchitectureAnalyzer:
 
     @staticmethod
     def detect_databases(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         databases = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 DATABASE_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, database in DATABASES.items():
-
                     if keyword.lower() in content:
-
                         databases.add(database)
 
         return sorted(databases)
 
     @staticmethod
     def detect_orms(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         orms = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 ORM_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, orm in ORMS.items():
-
                     if keyword.lower() in content:
-
                         orms.add(orm)
 
         return sorted(orms)
 
     @staticmethod
     def detect_authentication(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         authentication_methods = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 AUTHENTICATION_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, auth_method in AUTHENTICATION_METHODS.items():
-
                     if keyword.lower() in content:
-
                         authentication_methods.add(auth_method)
 
         return sorted(authentication_methods)
 
     @staticmethod
     def detect_api_styles(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         api_styles = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 API_STYLE_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, api_style in API_STYLES.items():
-
                     if keyword.lower() in content:
-
                         api_styles.add(api_style)
 
         return sorted(api_styles)
 
     @staticmethod
     def detect_devops(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         devops = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 DEVOPS_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, devops_tool in DEVOPS_TOOLS.items():
-
                     if keyword.lower() in content:
-
                         devops.add(devops_tool)
 
         return sorted(devops)
 
     @staticmethod
     def detect_cicd(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         cicd = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 CICD_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, cicd_platform in CICD_PLATFORMS.items():
-
                     if keyword.lower() in content:
-
                         cicd.add(cicd_platform)
 
         return sorted(cicd)
 
     @staticmethod
     def detect_testing(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         testing = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 TESTING_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, testing_tool in TESTING_TOOLS.items():
-
                     if keyword.lower() in content:
-
                         testing.add(testing_tool)
 
         return sorted(testing)
 
     @staticmethod
     def detect_code_quality(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         code_quality = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 CODE_QUALITY_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, code_quality_tool in CODE_QUALITY_TOOLS.items():
-
                     if keyword.lower() in content:
-
                         code_quality.add(code_quality_tool)
 
         return sorted(code_quality)
 
     @staticmethod
     def detect_environment(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         environment = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 ENVIRONMENT_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, environment_config in ENVIRONMENT_CONFIGS.items():
-
                     if keyword.lower() in content:
-
                         environment.add(environment_config)
 
         return sorted(environment)
 
     @staticmethod
     def detect_deployment(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         deployment = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 DEPLOYMENT_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, deployment_platform in DEPLOYMENT_PLATFORMS.items():
-
                     if keyword.lower() in content:
-
                         deployment.add(deployment_platform)
 
         return sorted(deployment)
 
     @staticmethod
     def detect_repository_characteristics(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[str]:
-
         repository_characteristics = set()
-
         contents = (
             ArchitectureAnalyzer.read_repository_file(
-                repository_path,
+                tracked_files,
                 REPOSITORY_FILES
             )
         )
 
         for file_contents in contents.values():
-
             for content in file_contents:
-
                 for keyword, characteristic in REPOSITORY_CHARACTERISTICS.items():
-
                     if keyword.lower() in content:
-
                         repository_characteristics.add(characteristic)
 
         return sorted(repository_characteristics)

@@ -71,21 +71,19 @@ class DependencyAnalyzer:
 
     @staticmethod
     def parse_requirements_txt(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan requirements from pre-scanned in-memory list instead of disk rglob.
         dependencies = []
 
-        for requirements_file in repository_path.rglob(
-            "requirements.txt"
-        ):
+        requirements_files = [f for f in tracked_files if f.name == "requirements.txt"]
 
+        for requirements_file in requirements_files:
             with requirements_file.open(
                 encoding="utf-8"
             ) as file:
 
                 for line in file:
-
                     line = line.strip()
 
                     if (
@@ -106,19 +104,17 @@ class DependencyAnalyzer:
 
     @staticmethod
     def parse_package_json(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan package.json from pre-scanned in-memory list.
         dependencies = []
 
-        for package_file in repository_path.rglob(
-            "package.json"
-        ):
+        package_files = [f for f in tracked_files if f.name == "package.json"]
 
+        for package_file in package_files:
             with package_file.open(
                 encoding="utf-8"
             ) as file:
-
                 package_data = json.load(file)
 
             for name, version in package_data.get(
@@ -155,19 +151,17 @@ class DependencyAnalyzer:
 
     @staticmethod
     def parse_pyproject_toml(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan pyproject.toml from pre-scanned in-memory list.
         dependencies = []
 
-        for pyproject_file in repository_path.rglob(
-            "pyproject.toml"
-        ):
+        pyproject_files = [f for f in tracked_files if f.name == "pyproject.toml"]
 
+        for pyproject_file in pyproject_files:
             with pyproject_file.open(
                 "rb"
             ) as file:
-
                 data = tomllib.load(file)
 
             project = data.get(
@@ -195,7 +189,6 @@ class DependencyAnalyzer:
             )
 
             for name, version in poetry_dependencies.items():
-
                 if name == "python":
                     continue
 
@@ -212,19 +205,17 @@ class DependencyAnalyzer:
 
     @staticmethod
     def parse_pipfile(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan Pipfile from pre-scanned in-memory list.
         dependencies = []
 
-        for pipfile in repository_path.rglob(
-            "Pipfile"
-        ):
+        pipfiles = [f for f in tracked_files if f.name == "Pipfile"]
 
+        for pipfile in pipfiles:
             with pipfile.open(
                 "rb"
             ) as file:
-
                 data = tomllib.load(file)
 
             for name, version in data.get(
@@ -261,25 +252,22 @@ class DependencyAnalyzer:
     
     @staticmethod
     def parse_go_mod(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan go.mod from pre-scanned in-memory list.
         dependencies = []
 
-        for go_mod in repository_path.rglob(
-            "go.mod"
-        ):
+        go_mods = [f for f in tracked_files if f.name == "go.mod"]
 
+        for go_mod in go_mods:
             with go_mod.open(
                 encoding="utf-8"
             ) as file:
-
                 lines = file.readlines()
 
             inside_require = False
 
             for line in lines:
-
                 line = line.strip()
 
                 if (
@@ -289,21 +277,17 @@ class DependencyAnalyzer:
                     continue
 
                 if line.startswith("require ("):
-
                     inside_require = True
                     continue
 
                 if inside_require and line == ")":
-
                     inside_require = False
                     continue
 
                 if inside_require:
-
                     parts = line.split()
 
                     if len(parts) >= 2:
-
                         dependencies.append(
                             DependencyAnalyzer.create_dependency(
                                 name=parts[0],
@@ -315,14 +299,12 @@ class DependencyAnalyzer:
                         )
 
                 elif line.startswith("require"):
-
                     parts = line.replace(
                         "require",
                         ""
                     ).strip().split()
 
                     if len(parts) >= 2:
-
                         dependencies.append(
                             DependencyAnalyzer.create_dependency(
                                 name=parts[0],
@@ -337,19 +319,17 @@ class DependencyAnalyzer:
 
     @staticmethod
     def parse_cargo_toml(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan Cargo.toml from pre-scanned in-memory list.
         dependencies = []
 
-        for cargo_file in repository_path.rglob(
-            "Cargo.toml"
-        ):
+        cargo_files = [f for f in tracked_files if f.name == "Cargo.toml"]
 
+        for cargo_file in cargo_files:
             with cargo_file.open(
                 "rb"
             ) as file:
-
                 data = tomllib.load(file)
 
             for name, version in data.get(
@@ -406,19 +386,17 @@ class DependencyAnalyzer:
 
     @staticmethod
     def parse_composer_json(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan composer.json from pre-scanned in-memory list.
         dependencies = []
 
-        for composer_file in repository_path.rglob(
-            "composer.json"
-        ):
+        composer_files = [f for f in tracked_files if f.name == "composer.json"]
 
+        for composer_file in composer_files:
             with composer_file.open(
                 encoding="utf-8"
             ) as file:
-
                 data = json.load(file)
 
             for name, version in data.get(
@@ -458,28 +436,23 @@ class DependencyAnalyzer:
     
     @staticmethod
     def parse_pom_xml(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan pom.xml from pre-scanned in-memory list.
         dependencies = []
 
-        for pom_file in repository_path.rglob(
-            "pom.xml"
-        ):
+        pom_files = [f for f in tracked_files if f.name == "pom.xml"]
 
+        for pom_file in pom_files:
             try:
-
                 tree = ET.parse(pom_file)
                 root = tree.getroot()
-
             except Exception:
-
                 continue
 
             namespace = ""
 
             if root.tag.startswith("{"):
-
                 namespace = root.tag.split("}")[0] + "}"
 
             for dependency in root.findall(
@@ -530,34 +503,24 @@ class DependencyAnalyzer:
 
     @staticmethod
     def parse_build_gradle(
-        repository_path: Path
+        tracked_files: list[Path]
     ) -> list[dict]:
-
+        # Edited on 2026-08-13: Refactored to scan build gradle from pre-scanned in-memory list.
         dependencies = []
 
-        gradle_files = list(
-            repository_path.rglob("build.gradle")
-        )
-
-        gradle_files.extend(
-            repository_path.rglob(
-                "build.gradle.kts"
-            )
-        )
+        gradle_files = [f for f in tracked_files if f.name in ("build.gradle", "build.gradle.kts")]
 
         pattern = re.compile(
             r'["\']([^:"\']+):([^:"\']+):([^"\']+)["\']'
         )
 
         for gradle_file in gradle_files:
-
             with gradle_file.open(
                 encoding="utf-8",
                 errors="ignore"
             ) as file:
 
                 for line in file:
-
                     match = pattern.search(
                         line
                     )
@@ -591,60 +554,64 @@ class DependencyAnalyzer:
     def detect_dependencies(
         repository_path: Path
     ) -> list[dict]:
+        # Edited on 2026-08-13: Refactored to scan repository once and reuse the file list in-memory.
+        from app.core.file_scanner import FileScanner
+
+        tracked_files = FileScanner.scan_repository(repository_path)
 
         dependencies = []
 
         dependencies.extend(
             DependencyAnalyzer.parse_requirements_txt(
-                repository_path
+                tracked_files
             )
         )
 
         dependencies.extend(
             DependencyAnalyzer.parse_package_json(
-                repository_path
+                tracked_files
             )
         )
 
         dependencies.extend(
             DependencyAnalyzer.parse_pyproject_toml(
-                repository_path
+                tracked_files
             )
         )
 
         dependencies.extend(
             DependencyAnalyzer.parse_pipfile(
-                repository_path
+                tracked_files
             )
         )
 
         dependencies.extend(
             DependencyAnalyzer.parse_go_mod(
-                repository_path
+                tracked_files
             )
         )
 
         dependencies.extend(
             DependencyAnalyzer.parse_cargo_toml(
-                repository_path
+                tracked_files
             )
         )
 
         dependencies.extend(
             DependencyAnalyzer.parse_composer_json(
-                repository_path
+                tracked_files
             )
         )
 
         dependencies.extend(
             DependencyAnalyzer.parse_pom_xml(
-                repository_path
+                tracked_files
             )
         )
 
         dependencies.extend(
             DependencyAnalyzer.parse_build_gradle(
-                repository_path
+                tracked_files
             )
         )
 

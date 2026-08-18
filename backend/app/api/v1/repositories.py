@@ -1,4 +1,5 @@
 # Edited on 2026-08-11 to support asynchronous repository analysis and polling.
+# Edited on 13-08-2026: Add authentication and authorization dependency imports
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, BackgroundTasks
 import time
 import json
@@ -22,6 +23,9 @@ from app.services.repository_architecture_service import (
 from app.services.repository_dependency_service import (
     RepositoryDependencyService
 )
+from app.api.deps import get_current_user, check_repository_owner
+from app.models.user import User
+from app.models.repository import Repository
 
 from app.schemas.repository_analysis import (
     RepositoryAnalysisCreate,
@@ -46,29 +50,37 @@ router = APIRouter(
 )
 def create_repository(
     repository_data: RepositoryCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-
+    # Edited on 13-08-2026: Set current user as owner on creation
     repository = RepositoryService.create_repository(
         db=db,
-        repository_data=repository_data
+        repository_data=repository_data,
+        user_id=current_user.id
     )
 
     return repository
+
 @router.get(
     "",
     response_model=list[RepositoryResponse])
 def get_repositories(
-    db: Session=Depends(get_db)):
-    return RepositoryService.get_repositories(db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Edited on 13-08-2026: Fetch only current user's repositories
+    return RepositoryService.get_repositories(db, user_id=current_user.id)
 
 @router.get(
     "/{repository_id}",
     response_model=RepositoryResponse)
 def get_repository(
     repository_id: str,
-    db: Session=Depends(get_db)):
-    return RepositoryService.get_repository(db, repository_id)
+    repository: Repository = Depends(check_repository_owner)
+):
+    # Edited on 13-08-2026: Validated repository ownership via dependency
+    return repository
 
 # Edited on 2026-08-11: Background task function to run repository analysis asynchronously.
 def analyze_repository_task(repository_id: str, repository_path: str, file_name: str):
@@ -105,8 +117,10 @@ def analyze_repository_task(repository_id: str, repository_path: str, file_name:
 def upload_repository(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)):
-    # Edited on 2026-08-11 to make upload asynchronous and schedule analysis via background task.
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Edited on 13-08-2026: Associate upload with uploading user's ID
     repository_id, repository_path = StorageService.create_repository_directory()
     
     # Save the uploaded ZIP
@@ -119,7 +133,8 @@ def upload_repository(
     repository = RepositoryService.initialize_uploaded_repository(
         db=db,
         file_name=file.filename,
-        repository_path=repository_path
+        repository_path=repository_path,
+        user_id=current_user.id
     )
     
     # Add background task to extract ZIP and run analysis pipeline
@@ -139,8 +154,10 @@ def upload_repository(
 )
 def get_repository_analysis(
     repository_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    repository: Repository = Depends(check_repository_owner)
 ):
+    # Edited on 13-08-2026: Validated repository ownership via dependency
     analysis = RepositoryAnalysisService.get_analysis(db=db, repository_id=repository_id)
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found for this repository")
@@ -162,8 +179,10 @@ def get_repository_analysis(
 )
 def get_repository_architecture(
     repository_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    repository: Repository = Depends(check_repository_owner)
 ):
+    # Edited on 13-08-2026: Validated repository ownership via dependency
     architecture = RepositoryArchitectureService.get_architecture(db=db, repository_id=repository_id)
     if not architecture:
         raise HTTPException(status_code=404, detail="Architecture not found for this repository")
@@ -177,8 +196,10 @@ def get_repository_architecture(
 )
 def get_repository_dependencies(
     repository_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    repository: Repository = Depends(check_repository_owner)
 ):
+    # Edited on 13-08-2026: Validated repository ownership via dependency
     dependencies = RepositoryDependencyService.get_repository_dependencies(db=db, repository_id=repository_id)
     return dependencies
 
@@ -188,12 +209,10 @@ def get_repository_dependencies(
 )
 def get_repository_documentation(
     repository_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    repository: Repository = Depends(check_repository_owner)
 ):
-    repository = RepositoryService.get_repository(db=db, repository_id=repository_id)
-    if not repository:
-        raise HTTPException(status_code=404, detail="Repository not found")
-    
+    # Edited on 13-08-2026: Validated repository ownership via dependency
     extracted_path = Path(repository.storage_path) / "extracted"
     try:
         repository_root = next(
@@ -218,12 +237,10 @@ def get_repository_documentation(
 )
 def get_repository_files(
     repository_id: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    repository: Repository = Depends(check_repository_owner)
 ):
-    repository = RepositoryService.get_repository(db=db, repository_id=repository_id)
-    if not repository:
-        raise HTTPException(status_code=404, detail="Repository not found")
-    
+    # Edited on 13-08-2026: Validated repository ownership via dependency
     extracted_path = Path(repository.storage_path) / "extracted"
     try:
         repository_root = next(
@@ -250,9 +267,9 @@ def get_repository_files(
             children = []
             try:
                 for child in sorted(path.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
-                    child_tree = build_tree(child, base_path)
-                    if child_tree:
-                        children.append(child_tree)
+                      child_tree = build_tree(child, base_path)
+                      if child_tree:
+                          children.append(child_tree)
             except Exception:
                 pass
             return {
@@ -273,12 +290,10 @@ def get_repository_files(
 def get_file_content(
     repository_id: str,
     path: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    repository: Repository = Depends(check_repository_owner)
 ):
-    repository = RepositoryService.get_repository(db=db, repository_id=repository_id)
-    if not repository:
-        raise HTTPException(status_code=404, detail="Repository not found")
-    
+    # Edited on 13-08-2026: Validated repository ownership via dependency
     extracted_path = Path(repository.storage_path) / "extracted"
     try:
         repository_root = next(

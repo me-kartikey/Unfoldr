@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.chat import router as chat_router
+from app.api.routes.auth import router as auth_router
 from app.api.v1.repositories import router as repository_router
 from app.core.config import settings
 
@@ -21,6 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Added on 13-08-2026: Include the newly created authentication routes
+app.include_router(auth_router)
 app.include_router(repository_router)
 app.include_router(chat_router)
 

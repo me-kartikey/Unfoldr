@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { Bot, Send, User, Sparkles, Loader2, BookOpen, AlertCircle } from "lucide-react";
 import { askQuestion } from "@/services/repositoryService";
 
@@ -13,6 +13,7 @@ interface Message {
 
 function DeveloperAssistant() {
   const { repositoryId } = useParams<{ repositoryId: string }>();
+  const location = useLocation();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -69,6 +70,18 @@ function DeveloperAssistant() {
       setIsLoading(false);
     }
   };
+
+  const initialQueryTriggered = useRef(false);
+
+  useEffect(() => {
+    const initialQuery = location.state?.initialQuery;
+    if (initialQuery && repositoryId && !initialQueryTriggered.current) {
+      initialQueryTriggered.current = true;
+      // Clear navigation history state cleanly to prevent re-triggering on navigation
+      window.history.replaceState({}, document.title);
+      handleSend(initialQuery);
+    }
+  }, [location.state, repositoryId]);
 
   const suggestedQuestions = [
     "What technologies and frameworks are used in this codebase?",
