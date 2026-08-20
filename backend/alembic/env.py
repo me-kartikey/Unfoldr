@@ -27,9 +27,11 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
-    url = settings.database_url
+    db_url = settings.database_url
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
     context.configure(
-        url=url,
+        url=db_url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -40,7 +42,10 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.database_url
+    db_url = settings.database_url
+    if db_url.startswith("postgresql://"):
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    configuration["sqlalchemy.url"] = db_url
     connectable = engine_from_config(
         configuration,
         prefix="sqlalchemy.",

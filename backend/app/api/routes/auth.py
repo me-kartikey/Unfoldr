@@ -41,6 +41,7 @@ def login(response: Response, login_data: UserLogin, db: Session = Depends(get_d
     
     token = create_access_token(subject=user.id)
     is_secure = settings.environment != "development"
+    samesite_setting = "none" if is_secure else "lax"
     
     # Set secure HttpOnly cookie for session tracking
     response.set_cookie(
@@ -48,7 +49,7 @@ def login(response: Response, login_data: UserLogin, db: Session = Depends(get_d
         value=token,
         httponly=True,
         secure=is_secure,
-        samesite="lax",
+        samesite=samesite_setting,
         max_age=settings.access_token_expire_minutes * 60
     )
     
@@ -64,7 +65,7 @@ def login(response: Response, login_data: UserLogin, db: Session = Depends(get_d
         value=csrf_token,
         httponly=False,  # JavaScript needs to read this to send in header
         secure=is_secure,
-        samesite="lax",
+        samesite=samesite_setting,
         max_age=settings.access_token_expire_minutes * 60
     )
     
@@ -77,18 +78,19 @@ def logout(response: Response):
     """
     from app.core.config import settings
     is_secure = settings.environment != "development"
+    samesite_setting = "none" if is_secure else "lax"
     
     response.delete_cookie(
         key="access_token",
         httponly=True,
         secure=is_secure,
-        samesite="lax"
+        samesite=samesite_setting
     )
     response.delete_cookie(
         key="csrf_token",
         httponly=False,
         secure=is_secure,
-        samesite="lax"
+        samesite=samesite_setting
     )
     return {"status": "success", "message": "Logged out successfully"}
 
