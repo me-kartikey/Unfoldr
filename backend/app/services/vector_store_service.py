@@ -8,13 +8,14 @@ from app.core.config import settings
 class VectorStoreService:
 
     def __init__(self):
-        Path(settings.chroma_db_path).mkdir(
+        chroma_path = Path(settings.chroma_db_path).resolve()
+        chroma_path.mkdir(
             parents=True,
             exist_ok=True
         )
 
         self.client = PersistentClient(
-            path=settings.chroma_db_path
+            path=str(chroma_path)
         )
 
         self.collection = self.client.get_or_create_collection(

@@ -177,7 +177,7 @@ function RepositoryFiles() {
   const handleAskAI = () => {
     if (!selectedPath || !repositoryId) return;
     navigate(`/workspace/${repositoryId}/assistant`, {
-      state: { initialQuery: `Explain this file completely: ${selectedPath}` }
+      state: { fileContext: selectedPath }
     });
   };
 

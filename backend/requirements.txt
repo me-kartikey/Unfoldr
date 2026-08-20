@@ -8,13 +8,12 @@ pydantic
 pydantic-settings
 
 python-dotenv
-
 python-multipart
 
 alembic
-
-# Added on 13-08-2026: pyjwt is used to generate and verify cryptographically signed JWT tokens for sessions
 pyjwt
-
-# Added on 13-08-2026: bcrypt is used to safely hash user passwords before storing them in PostgreSQL
 bcrypt
+
+slowapi
+google-genai
+chromadb

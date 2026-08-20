@@ -20,7 +20,8 @@ class RepositoryAnalysis(Base):
         String(36),
         ForeignKey("repositories.id"),
         nullable=False,
-        unique=True
+        unique=True,
+        index=True
     )
 
     total_files: Mapped[int] = mapped_column(

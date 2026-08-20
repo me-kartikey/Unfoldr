@@ -19,11 +19,15 @@ def register(user_create: UserCreate, db: Session = Depends(get_db)):
     """
     return UserService.register_user(db, user_create)
 
-@router.post("/login", response_model=Token)
+@router.post("/login")
 def login(response: Response, login_data: UserLogin, db: Session = Depends(get_db)):
     """
     Authenticate user credentials, issue a JWT session token, and set it in a secure HTTP-only cookie.
     """
+    from app.core.config import settings
+    import hmac
+    import hashlib
+
     user = UserService.authenticate_user(
         db, 
         login_data.username_or_email, 
@@ -36,28 +40,54 @@ def login(response: Response, login_data: UserLogin, db: Session = Depends(get_d
         )
     
     token = create_access_token(subject=user.id)
+    is_secure = settings.environment != "development"
     
     # Set secure HttpOnly cookie for session tracking
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=False,  # Should be set to True in production over HTTPS
+        secure=is_secure,
         samesite="lax",
-        max_age=1800   # Token valid for 30 minutes
+        max_age=settings.access_token_expire_minutes * 60
     )
     
-    return {"access_token": token, "token_type": "bearer"}
+    # Generate CSRF token statelessly tied to the session
+    csrf_token = hmac.new(
+        settings.csrf_secret_key.encode(),
+        token.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,  # JavaScript needs to read this to send in header
+        secure=is_secure,
+        samesite="lax",
+        max_age=settings.access_token_expire_minutes * 60
+    )
+    
+    return {"status": "success", "message": "Logged in successfully"}
 
 @router.post("/logout")
 def logout(response: Response):
     """
     Log out user by deleting the access_token session cookie.
     """
+    from app.core.config import settings
+    is_secure = settings.environment != "development"
+    
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        secure=False,
+        secure=is_secure,
+        samesite="lax"
+    )
+    response.delete_cookie(
+        key="csrf_token",
+        httponly=False,
+        secure=is_secure,
         samesite="lax"
     )
     return {"status": "success", "message": "Logged out successfully"}

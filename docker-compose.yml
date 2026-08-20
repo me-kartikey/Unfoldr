@@ -1,19 +1,44 @@
 services:
   postgres:
     image: postgres:17
-
     container_name: onboarding_postgres
-
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: onboarding_db
-
-    ports:
-      - "5432:5432"
-
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-onboarding_db}
+    # Port 5432 is not exposed externally to prevent public database scanning
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: onboarding_backend
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-onboarding_db}
+      - UPLOAD_DIR=/app/storage/repositories_collection
+      - CHROMA_DB_PATH=/app/storage/chroma
+      - ALLOWED_ORIGINS=["http://localhost","http://localhost:80","http://localhost:5173","http://localhost:5174","http://127.0.0.1","http://127.0.0.1:80"]
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+    volumes:
+      - repo_storage:/app/storage/repositories_collection
+      - chroma_storage:/app/storage/chroma
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: onboarding_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
+  repo_storage:
+  chroma_storage:

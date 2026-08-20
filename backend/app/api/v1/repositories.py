@@ -3,7 +3,10 @@
 from fastapi import APIRouter, Depends, File, UploadFile, HTTPException, BackgroundTasks
 import time
 import json
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 from app.analyzers.repository_analyzer import RepositoryAnalyzer
 from sqlalchemy.orm import Session
 from app.services.storage_service import StorageService
@@ -96,16 +99,14 @@ def analyze_repository_task(repository_id: str, repository_path: str, file_name:
             file_name=file_name
         )
     except Exception as e:
-        print(f"Error in background analysis task for repository {repository_id}: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in background analysis task for repository {repository_id}: {e}", exc_info=True)
         try:
             repository = RepositoryService.get_repository(db, repository_id)
             if repository:
                 repository.status = "failed"
                 db.commit()
         except Exception as db_err:
-            print(f"Error updating fail status for repository {repository_id}: {db_err}")
+            logger.error(f"Error updating fail status for repository {repository_id}: {db_err}")
     finally:
         db.close()
 
@@ -308,6 +309,15 @@ def get_file_content(
     
     if not safe_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
+
+    SENSITIVE_PATTERNS = [".env", ".key", ".pem", ".p12", ".pfx", "id_rsa", "id_dsa"]
+    for pattern in SENSITIVE_PATTERNS:
+        if pattern.startswith(".") and safe_path.name.startswith(pattern):
+            raise HTTPException(status_code=403, detail="Access denied: Sensitive file")
+        if pattern.startswith("*.") and safe_path.name.endswith(pattern[1:]):
+            raise HTTPException(status_code=403, detail="Access denied: Sensitive file")
+        if pattern == safe_path.name:
+            raise HTTPException(status_code=403, detail="Access denied: Sensitive file")
     
     try:
         content = safe_path.read_text(encoding="utf-8", errors="ignore")

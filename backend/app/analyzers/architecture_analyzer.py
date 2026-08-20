@@ -127,6 +127,7 @@ class ArchitectureAnalyzer:
 
         architecture_pattern = (
             ArchitectureAnalyzer.detect_architecture_pattern(
+                tracked_files,
                 root_folders
             )
         )
@@ -307,26 +308,58 @@ class ArchitectureAnalyzer:
 
     @staticmethod
     def detect_architecture_pattern(
+        tracked_files: list[Path],
         root_folders: list[str]
     ) -> str:
-        folders = {
-            folder.lower()
-            for folder in root_folders
-        }
+        # Collect all directory names recursively across the entire repository
+        all_folder_names = set()
+        for folder in root_folders:
+            all_folder_names.add(folder.lower())
 
-        if LAYERED_FOLDERS.issubset(folders):
-            return "Layered Architecture"
+        for file_path in tracked_files:
+            for parent in file_path.parents:
+                if parent.name and parent.name not in IGNORE_FOLDERS:
+                    all_folder_names.add(parent.name.lower())
 
-        if CLEAN_ARCHITECTURE_FOLDERS.issubset(folders):
+        # Define pattern indicator sets
+        layered_indicators = {"controllers", "services", "repositories", "models", "schemas", "routes", "middlewares", "api", "endpoints", "handlers", "dao", "dto"}
+        mvc_indicators = {"controllers", "models", "views", "templates"}
+        clean_indicators = {"domain", "application", "infrastructure", "presentation", "usecases", "core"}
+        hexagonal_indicators = {"adapters", "ports"}
+        component_indicators = {"components", "pages", "views", "layouts", "containers", "widgets", "hooks", "store"}
+
+        # Calculate intersection scores
+        layered_score = len(layered_indicators.intersection(all_folder_names))
+        mvc_score = len(mvc_indicators.intersection(all_folder_names))
+        clean_score = len(clean_indicators.intersection(all_folder_names))
+        hexagonal_score = len(hexagonal_indicators.intersection(all_folder_names))
+        component_score = len(component_indicators.intersection(all_folder_names))
+
+        # Check for Clean Architecture
+        if clean_score >= 2 or ("domain" in all_folder_names and "infrastructure" in all_folder_names):
             return "Clean Architecture"
 
-        if HEXAGONAL_FOLDERS.issubset(folders):
+        # Check for Hexagonal Architecture
+        if hexagonal_score >= 1 or ("adapters" in all_folder_names and "ports" in all_folder_names):
             return "Hexagonal Architecture"
 
-        if MVC_FOLDERS.issubset(folders):
-            return "MVC"
+        # Check for MVC Architecture
+        if ("controllers" in all_folder_names and "views" in all_folder_names) or mvc_score >= 2:
+            return "MVC Architecture"
 
-        return "Unknown"
+        # Check for Layered Architecture (Service / Repository / Route / Controller pattern)
+        if layered_score >= 2 or ("services" in all_folder_names or "routes" in all_folder_names or "api" in all_folder_names):
+            return "Layered Architecture"
+
+        # Check for Component-Based SPA Architecture
+        if component_score >= 2 or "components" in all_folder_names or "pages" in all_folder_names:
+            return "Component-Based Architecture"
+
+        # Fallback for standard repository structures
+        if len(root_folders) > 0:
+            return "Modular Monolith"
+
+        return "Standard Monolithic"
 
     @staticmethod
     def detect_databases(

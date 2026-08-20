@@ -81,3 +81,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Audit Reports & Temporary Test Artifacts
+*_REPORT.md
+*REPORT*.md
+scratch/
+plan.txt
+

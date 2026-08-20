@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useLocation } from "react-router-dom";
-import { Bot, Send, User, Sparkles, Loader2, BookOpen, AlertCircle } from "lucide-react";
+import { Bot, Send, User, Sparkles, Loader2, BookOpen, AlertCircle, FileCode, X, Trash2 } from "lucide-react";
 import { askQuestion } from "@/services/repositoryService";
 
 interface Message {
@@ -14,19 +14,38 @@ interface Message {
 function DeveloperAssistant() {
   const { repositoryId } = useParams<{ repositoryId: string }>();
   const location = useLocation();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      sender: "ai",
-      text: "Hello! I am your AI Developer Onboarding Assistant. Ask me anything about the repository files, project structure, technologies used, database schemas, or installation requirements.",
-      timestamp: new Date()
+  // Load initial chat history from sessionStorage for this repository
+  const storageKey = repositoryId ? `unfoldr_chat_${repositoryId}` : null;
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (storageKey) {
+      const saved = sessionStorage.getItem(storageKey);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          return parsed.map((m: any) => ({ ...m, timestamp: new Date(m.timestamp) }));
+        } catch (e) {
+          console.error("Failed to parse saved chat history:", e);
+        }
+      }
     }
-  ]);
+    return [
+      {
+        id: "welcome",
+        sender: "ai",
+        text: "Hello! I am your AI Developer Onboarding Assistant. Ask me anything about the repository files, project structure, technologies used, database schemas, or installation requirements.",
+        timestamp: new Date()
+      }
+    ];
+  });
+
   const [inputValue, setInputValue] = useState("");
+  const [fileContext, setFileContext] = useState<string | null>(location.state?.fileContext || null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,15 +55,59 @@ function DeveloperAssistant() {
     scrollToBottom();
   }, [messages, isLoading]);
 
+  // Persist chat history to sessionStorage whenever messages change
+  useEffect(() => {
+    if (storageKey && messages.length > 0) {
+      sessionStorage.setItem(storageKey, JSON.stringify(messages));
+    }
+  }, [messages, storageKey]);
+
+  const handleClearHistory = () => {
+    if (storageKey) {
+      sessionStorage.removeItem(storageKey);
+    }
+    setMessages([
+      {
+        id: "welcome",
+        sender: "ai",
+        text: "Hello! I am your AI Developer Onboarding Assistant. Ask me anything about the repository files, project structure, technologies used, database schemas, or installation requirements.",
+        timestamp: new Date()
+      }
+    ]);
+  };
+
+  // Keep cursor focused in input box whenever AI finishes loading
+  useEffect(() => {
+    if (!isLoading) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 50);
+    }
+  }, [isLoading]);
+
+  // Read fileContext from navigation state without auto-sending any question
+  useEffect(() => {
+    if (location.state?.fileContext) {
+      setFileContext(location.state.fileContext);
+      window.history.replaceState({}, document.title);
+    }
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  }, [location.state]);
+
   const handleSend = async (textToSend: string) => {
     const text = textToSend.trim();
     if (!text || !repositoryId) return;
 
-    // Add user message
+    // Combine user text with file context reference if active
+    const queryForAi = fileContext ? `[File Reference: ${fileContext}] ${text}` : text;
+
+    // Add user message to UI
     const userMsg: Message = {
       id: `msg-${Date.now()}-user`,
       sender: "user",
-      text,
+      text: fileContext ? `[Ref: ${fileContext}]\n${text}` : text,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, userMsg]);
@@ -53,7 +116,7 @@ function DeveloperAssistant() {
     setIsLoading(true);
 
     try {
-      const response = await askQuestion(repositoryId, text);
+      const response = await askQuestion(repositoryId, queryForAi);
       
       const aiMsg: Message = {
         id: `msg-${Date.now()}-ai`,
@@ -70,18 +133,6 @@ function DeveloperAssistant() {
       setIsLoading(false);
     }
   };
-
-  const initialQueryTriggered = useRef(false);
-
-  useEffect(() => {
-    const initialQuery = location.state?.initialQuery;
-    if (initialQuery && repositoryId && !initialQueryTriggered.current) {
-      initialQueryTriggered.current = true;
-      // Clear navigation history state cleanly to prevent re-triggering on navigation
-      window.history.replaceState({}, document.title);
-      handleSend(initialQuery);
-    }
-  }, [location.state, repositoryId]);
 
   const suggestedQuestions = [
     "What technologies and frameworks are used in this codebase?",
@@ -159,6 +210,17 @@ function DeveloperAssistant() {
             <p className="text-[10px] text-slate-400 font-semibold tracking-wide">Ready to answers codebase queries</p>
           </div>
         </div>
+
+        {messages.length > 1 && (
+          <button
+            onClick={handleClearHistory}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 hover:border-rose-200 text-[10px] font-bold text-slate-500 hover:text-rose-600 transition cursor-pointer"
+            title="Clear Chat History"
+          >
+            <Trash2 size={12} />
+            <span>Clear Chat</span>
+          </button>
+        )}
       </div>
 
       {/* Message History Area */}
@@ -248,6 +310,24 @@ function DeveloperAssistant() {
           </div>
         )}
 
+        {/* Active File Context Badge */}
+        {fileContext && (
+          <div className="flex items-center justify-between px-3 py-1.5 bg-indigo-50 border border-indigo-100 rounded-xl text-xs text-indigo-700 max-w-4xl mx-auto shadow-sm">
+            <div className="flex items-center gap-2 truncate">
+              <FileCode size={14} className="text-indigo-500 shrink-0" />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">File Context:</span>
+              <span className="font-mono text-[11px] font-semibold text-indigo-900 truncate">{fileContext}</span>
+            </div>
+            <button
+              onClick={() => setFileContext(null)}
+              className="p-1 hover:bg-indigo-100 rounded-lg text-indigo-400 hover:text-indigo-600 transition cursor-pointer shrink-0 ml-2"
+              title="Remove file context"
+            >
+              <X size={12} />
+            </button>
+          </div>
+        )}
+
         {/* Form Input */}
         <form
           onSubmit={(e) => {
@@ -257,6 +337,7 @@ function DeveloperAssistant() {
           className="flex items-center gap-2 max-w-4xl mx-auto border border-slate-200 rounded-xl p-1 bg-slate-50 focus-within:border-indigo-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-indigo-100 transition-all shadow-inner"
         >
           <input
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

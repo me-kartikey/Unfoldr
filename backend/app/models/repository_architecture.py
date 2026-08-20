@@ -21,6 +21,7 @@ class RepositoryArchitecture(Base):
         String(36),
         ForeignKey("repositories.id"),
         nullable=False,
+        index=True,
         unique=True
     )
 

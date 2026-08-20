@@ -1,5 +1,8 @@
 from pathlib import Path
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 from app.services.chunking_service import ChunkingService
 from app.services.embedding_service import EmbeddingService
@@ -121,17 +124,17 @@ class RepositoryService:
             repository_path=repository_path
         )
         extract_time = time.perf_counter() - start_extract
-        print(f"PROFILER: Zip Extraction took {extract_time:.3f}s")
+        logger.info(f"PROFILER: Zip Extraction took {extract_time:.3f}s")
 
-        repository_root = next(
-            item
-            for item in extracted_path.iterdir()
-            if item.is_dir()
-        )
-        print("\n====== EXTRACTED CONTENT ======")
-        for item in extracted_path.rglob("*"):
-            pass # Suppressed full contents print to speed up I/O print time
-        print("===============================\n")
+        try:
+            repository_root = next(
+                item
+                for item in extracted_path.iterdir()
+                if item.is_dir()
+            )
+        except StopIteration:
+            repository_root = extracted_path
+
 
         # Repository Analysis
         start_rep_analysis = time.perf_counter()
@@ -139,7 +142,7 @@ class RepositoryService:
             repository_root
         )
         rep_analysis_time = time.perf_counter() - start_rep_analysis
-        print(f"PROFILER: Repository Analysis took {rep_analysis_time:.3f}s")
+        logger.info(f"PROFILER: Repository Analysis took {rep_analysis_time:.3f}s")
 
         start_rep_save = time.perf_counter()
         repository_analysis = RepositoryAnalysisCreate(
@@ -157,7 +160,7 @@ class RepositoryService:
         )
         db.commit()
         rep_save_time = time.perf_counter() - start_rep_save
-        print(f"PROFILER: Repository Analysis DB Save took {rep_save_time:.3f}s")
+        logger.info(f"PROFILER: Repository Analysis DB Save took {rep_save_time:.3f}s")
 
         # Dependency Analysis
         start_dep_analysis = time.perf_counter()
@@ -165,7 +168,7 @@ class RepositoryService:
             repository_root
         )
         dep_analysis_time = time.perf_counter() - start_dep_analysis
-        print(f"PROFILER: Dependency Analysis took {dep_analysis_time:.3f}s")
+        logger.info(f"PROFILER: Dependency Analysis took {dep_analysis_time:.3f}s")
 
         # Saving Dependencies
         start_dep_save = time.perf_counter()
@@ -185,7 +188,7 @@ class RepositoryService:
             )
         db.commit()
         dep_save_time = time.perf_counter() - start_dep_save
-        print(f"PROFILER: Dependency Save to DB took {dep_save_time:.3f}s")
+        logger.info(f"PROFILER: Dependency Save to DB took {dep_save_time:.3f}s")
         
         start_dep_fetch = time.perf_counter()
         repository_dependencies = (
@@ -195,7 +198,7 @@ class RepositoryService:
                 )
         )
         dep_fetch_time = time.perf_counter() - start_dep_fetch
-        print(f"PROFILER: Dependency Fetch from DB took {dep_fetch_time:.3f}s")
+        logger.info(f"PROFILER: Dependency Fetch from DB took {dep_fetch_time:.3f}s")
 
         # Architecture Analysis
         start_arch_analysis = time.perf_counter()
@@ -203,7 +206,7 @@ class RepositoryService:
             repository_root
         )
         arch_analysis_time = time.perf_counter() - start_arch_analysis
-        print(f"PROFILER: Architecture Analysis took {arch_analysis_time:.3f}s")
+        logger.info(f"PROFILER: Architecture Analysis took {arch_analysis_time:.3f}s")
 
         # Saving Architecture
         start_arch_save = time.perf_counter()
@@ -235,7 +238,7 @@ class RepositoryService:
         )
         db.commit()
         arch_save_time = time.perf_counter() - start_arch_save
-        print(f"PROFILER: Architecture Save to DB took {arch_save_time:.3f}s")
+        logger.info(f"PROFILER: Architecture Save to DB took {arch_save_time:.3f}s")
 
         # Document Generation
         start_doc_gen = time.perf_counter()
@@ -251,7 +254,7 @@ class RepositoryService:
             content=documentation,
         )
         doc_gen_time = time.perf_counter() - start_doc_gen
-        print(f"PROFILER: Documentation Generation & File Save took {doc_gen_time:.3f}s")
+        logger.info(f"PROFILER: Documentation Generation & File Save took {doc_gen_time:.3f}s")
 
         # Chunking & Embedding
         start_embedding = time.perf_counter()
@@ -260,7 +263,7 @@ class RepositoryService:
         vector_store = VectorStoreService()
 
         chunks = chunking_service.chunk_document(documentation)
-        print(f"PROFILER: Document split into {len(chunks)} chunks")
+        logger.info(f"PROFILER: Document split into {len(chunks)} chunks")
 
         ids = []
         documents = []
@@ -286,7 +289,7 @@ class RepositoryService:
         embeddings = embedding_service.generate_embeddings(documents)
 
         embed_total_time = time.perf_counter() - start_embedding
-        print(f"PROFILER: Embeddings loops took {embed_total_time:.3f}s")
+        logger.info(f"PROFILER: Embeddings loops took {embed_total_time:.3f}s")
 
         # Vector Database Storage
         start_vector_save = time.perf_counter()
@@ -297,7 +300,7 @@ class RepositoryService:
             metadatas=metadatas
         )
         vector_save_time = time.perf_counter() - start_vector_save
-        print(f"PROFILER: ChromaDB Vector Storage took {vector_save_time:.3f}s")
+        logger.info(f"PROFILER: ChromaDB Vector Storage took {vector_save_time:.3f}s")
 
         # Updating Repository Status
         start_status = time.perf_counter()
@@ -305,9 +308,9 @@ class RepositoryService:
         db.commit()
         db.refresh(repository)
         status_time = time.perf_counter() - start_status
-        print(f"PROFILER: Updating Status to completed took {status_time:.3f}s")
+        logger.info(f"PROFILER: Updating Status to completed took {status_time:.3f}s")
 
         total_pipeline_time = time.perf_counter() - pipeline_start
-        print(f"PROFILER: TOTAL PIPELINE EXECUTION TIME: {total_pipeline_time:.3f}s")
+        logger.info(f"PROFILER: TOTAL PIPELINE EXECUTION TIME: {total_pipeline_time:.3f}s")
 
         return repository

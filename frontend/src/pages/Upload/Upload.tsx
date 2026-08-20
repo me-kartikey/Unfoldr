@@ -66,7 +66,6 @@ function Upload() {
             clearTimeout(timer4);
 
             setStatusMessage("Finalizing analysis...");
-            console.log("Repository Uploaded Successfully", repository);
             
             // Navigate to overview of the new workspace
             navigate(`/workspace/${repository.id}`);
