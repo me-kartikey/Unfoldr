@@ -24,18 +24,36 @@ class RepositoryAnalyzer:
             extensions.add(item.suffix.lower())
         return extensions
     
-    # detect the programming languages used in the repository based on the file extensions
+    # detect the programming languages used in the repository based on tracked files frequency
     @staticmethod
     def detect_languages(
-        extensions: set[str]
-    ) -> set[str]:
-        # Edited on 2026-08-13: Refactored to check from pre-scanned extensions list
-        languages = set()
-        for ext in extensions:
-            language=EXTENSION_LANGUAGE_MAP.get(ext)
-            if language:
-                languages.add(language)
-        return languages
+        tracked_files: list[Path]
+    ) -> list[str]:
+        from collections import Counter
+        counts = Counter()
+        NON_PROGRAMMING = {"Markdown", "JSON", "YAML", "HTML", "CSS", "XML"}
+        
+        for item in tracked_files:
+            ext = item.suffix.lower()
+            lang = EXTENSION_LANGUAGE_MAP.get(ext)
+            if lang:
+                counts[lang] += 1
+                
+        if not counts:
+            return []
+            
+        # Sort core programming languages first by file volume descending
+        prog_langs = sorted(
+            [lang for lang in counts if lang not in NON_PROGRAMMING],
+            key=lambda l: counts[l],
+            reverse=True
+        )
+        other_langs = sorted(
+            [lang for lang in counts if lang in NON_PROGRAMMING],
+            key=lambda l: counts[l],
+            reverse=True
+        )
+        return prog_langs + other_langs
         
       # analyze the repository and return a dictionary with the total number of files, extensions, and languages
     @staticmethod
@@ -49,7 +67,7 @@ class RepositoryAnalyzer:
 
         total_files = RepositoryAnalyzer.count_files(tracked_files)
         extensions = RepositoryAnalyzer.detect_extensions(tracked_files)
-        languages = RepositoryAnalyzer.detect_languages(extensions)
+        languages = RepositoryAnalyzer.detect_languages(tracked_files)
         frameworks = RepositoryAnalyzer.detect_frameworks(tracked_files)
         libraries = RepositoryAnalyzer.detect_libraries(tracked_files)
 
