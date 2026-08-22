@@ -37,23 +37,18 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             token = request.cookies.get("access_token")
             csrf_token_header = request.headers.get("x-csrf-token")
             
-            if not token or not csrf_token_header:
-                return JSONResponse(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    content={"detail": "CSRF token missing"}
-                )
+            if token and csrf_token_header:
+                expected_csrf = hmac.new(
+                    settings.csrf_secret_key.encode(),
+                    token.encode(),
+                    hashlib.sha256
+                ).hexdigest()
                 
-            expected_csrf = hmac.new(
-                settings.csrf_secret_key.encode(),
-                token.encode(),
-                hashlib.sha256
-            ).hexdigest()
-            
-            if not hmac.compare_digest(csrf_token_header, expected_csrf):
-                return JSONResponse(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    content={"detail": "CSRF token mismatch"}
-                )
+                if not hmac.compare_digest(csrf_token_header, expected_csrf):
+                    return JSONResponse(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        content={"detail": "CSRF token mismatch"}
+                    )
         return await call_next(request)
 
 app.add_middleware(CSRFMiddleware)
