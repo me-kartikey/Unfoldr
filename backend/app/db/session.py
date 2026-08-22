@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session,sessionmaker
 from app.core.config import settings
 db_url = settings.database_url
 if db_url.startswith("postgresql://"):
-    db_url = db_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
 engine = create_engine(
     db_url,
