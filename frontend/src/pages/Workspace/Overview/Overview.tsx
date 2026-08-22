@@ -137,7 +137,13 @@ function Overview() {
           <div>
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Primary Language</p>
             <p className="text-xl font-bold text-slate-800 mt-0.5">
-              {analysis.languages?.[0] || "Unknown"}
+              {(() => {
+                const langs = analysis.languages || [];
+                const codeLangs = langs.filter(
+                  l => !["Markdown", "JSON", "YAML", "HTML", "CSS", "XML"].includes(l)
+                );
+                return codeLangs[0] || langs[0] || "Unknown";
+              })()}
             </p>
           </div>
         </div>
