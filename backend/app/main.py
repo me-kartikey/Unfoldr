@@ -12,6 +12,10 @@ from app.api.routes.chat import router as chat_router
 from app.api.routes.auth import router as auth_router
 from app.api.v1.repositories import router as repository_router
 from app.core.config import settings
+from app.db.base import Base
+from app.db.session import engine
+import app.models.user
+import app.models.repository
 
 limiter = Limiter(key_func=get_remote_address)
 
@@ -73,6 +77,8 @@ async def startup_event():
     import logging
     logger = logging.getLogger("uvicorn")
     logger.info(f"Loaded CORS Allowed Origins: {settings.allowed_origins}")
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables verified/created successfully.")
 
 @app.get("/health")
 async def health_check():
