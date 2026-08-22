@@ -47,12 +47,20 @@ class Settings(BaseSettings):
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         if isinstance(v, str):
             v_str = v.strip()
+            if not v_str:
+                return []
             if v_str.startswith("[") and v_str.endswith("]"):
                 try:
-                    return json.loads(v_str)
+                    clean_json = v_str.replace("'", '"')
+                    parsed = json.loads(clean_json)
+                    if isinstance(parsed, list):
+                        return [str(item).strip().rstrip("/") for item in parsed if item]
                 except Exception:
                     pass
-            return [i.strip() for i in v_str.split(",") if i.strip()]
+            items = v_str.replace("[", "").replace("]", "").replace("'", "").replace('"', '').split(",")
+            return [item.strip().rstrip("/") for item in items if item.strip()]
+        if isinstance(v, list):
+            return [str(item).strip().rstrip("/") for item in v if item]
         return v
 
     model_config = SettingsConfigDict(

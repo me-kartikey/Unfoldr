@@ -68,10 +68,17 @@ app.include_router(auth_router)
 app.include_router(repository_router)
 app.include_router(chat_router)
 
+@app.on_event("startup")
+async def startup_event():
+    import logging
+    logger = logging.getLogger("uvicorn")
+    logger.info(f"Loaded CORS Allowed Origins: {settings.allowed_origins}")
+
 @app.get("/health")
 async def health_check():
     return {
         "app": settings.app_name,
         "environment": settings.environment,
-        "status": "healthy"
+        "status": "healthy",
+        "allowed_origins": settings.allowed_origins
     }
